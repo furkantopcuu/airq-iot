@@ -26,6 +26,10 @@ pre-commit install
 pytest -m "not broker and not slow"
 ```
 
+MQTT broker: install Mosquitto (`winget install EclipseFoundation.Mosquitto`) and run
+`mosquitto -c configs\mosquitto.conf -v`; without it, `python -m airq.iot.broker` starts a pure-Python
+fallback (amqtt).
+
 ## Limitations
 
 Beijing data comes from reference stations, not low-cost sensors; the evaluation is a

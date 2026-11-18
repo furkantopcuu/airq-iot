@@ -116,9 +116,9 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Projede nerede: `src/airq/devices/`
 - Sunumda tek cümle: Gerçek ölçümleri sanal cihazlarla yeniden oynatıyoruz; saha çalışması iddiamız yok.
 
-### Mosquitto yerine amqtt (şimdilik) ve Pydantic şemaları
-- Ne: Mosquitto bu makinede kurulu değil; saf-Python amqtt broker'ı kullanıyoruz. Mesaj biçimi Pydantic şemasıyla doğrulanır.
-- Neden: amqtt kurulum gerektirmez ve CI'da çalışır. Ancak gecikme ölçümlerinde (RQ3a) Mosquitto daha gerçekçidir; kurulursa broker değişir ve makalede belirtilir. Şema, bozuk mesajı kapıda reddeder.
-- Alternatifler ve neden seçilmedi: Doğrulamasız JSON (bozuk veri tahmine sızar).
-- Projede nerede: `src/airq/iot/broker.py`, `schemas.py`
-- Sunumda tek cümle: Mesajlar şemayla doğrulanıyor; geçersiz olan edge'e daha gelmeden reddediliyor.
+### Mosquitto (asıl broker), amqtt (yedek) ve Pydantic şemaları
+- Ne: Mesajları dağıtan broker olarak Mosquitto kullanıyoruz; kurulu değilse (ör. CI) saf-Python amqtt devreye girer. Mesaj biçimi Pydantic şemasıyla doğrulanır.
+- Neden: Mosquitto olgun, hafif (birkaç MB RAM) bir C programı ve literatürdeki referans broker; ağ ölçümlerinde (gecikme, kayıp) broker kendi gecikmesini ölçüme katmaz. amqtt tek iş parçacıklı Python olduğundan yük altında ölçümü bulandırabilir. Testlerimiz her iki broker'da da geçiyor. Şema, bozuk mesajı kapıda reddeder.
+- Alternatifler ve neden seçilmedi: Yalnızca amqtt (kurulumsuz ama ölçüm için zayıf), RabbitMQ (ağır, kapsam dışı), doğrulamasız JSON (bozuk veri tahmine sızar).
+- Projede nerede: `src/airq/iot/broker.py`, `configs/mosquitto.conf`, `src/airq/iot/schemas.py`
+- Sunumda tek cümle: Ağ ölçümlerini yaygın kullanılan Mosquitto ile yaptık; mesajlar şemayla doğrulanıyor.
