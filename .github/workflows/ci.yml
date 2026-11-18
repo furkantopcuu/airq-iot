@@ -16,24 +16,27 @@ jobs:
       - run: pytest -m "not broker and not slow" --cov=airq --cov-report=term-missing
   notebooks:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('notebooks/*.ipynb') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12", cache: pip}
-      - run: pip install -e ".[ml,dev]"
-      - run: AIRQ_FIXTURE=1 pytest --nbmake notebooks/ --nbmake-timeout=600
+      - if: ${{ hashFiles('notebooks/*.ipynb') != '' }}
+        run: pip install -e ".[ml,dev]"
+      - if: ${{ hashFiles('notebooks/*.ipynb') != '' }}
+        run: AIRQ_FIXTURE=1 pytest --nbmake notebooks/ --nbmake-timeout=600
   broker-integration:
     runs-on: ubuntu-latest
     continue-on-error: true
-    if: ${{ hashFiles('src/airq/iot/broker.py') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.11", cache: pip}
-      - run: pip install -r requirements.txt
-      - run: pip install -e .
-      - run: |
+      - if: ${{ hashFiles('src/airq/iot/broker.py') != '' }}
+        run: pip install -r requirements.txt
+      - if: ${{ hashFiles('src/airq/iot/broker.py') != '' }}
+        run: pip install -e .
+      - if: ${{ hashFiles('src/airq/iot/broker.py') != '' }}
+        run: |
           python -m airq.iot.broker &
           sleep 3
           pytest -m broker
