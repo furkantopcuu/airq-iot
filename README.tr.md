@@ -1,0 +1,32 @@
+# airq-iot
+
+IoT tabanlı hava kalitesi izleme, çok ufuklu PM2.5 tahmini ve erken uyarı.
+Pekin çok istasyonlu hava kalitesi verisi, sanal IoT cihazlarıyla MQTT üzerinden yeniden
+oynatılır (trace-driven emülasyon), edge gateway'de doğrulanır ve LightGBM ile 1/6/24 saat
+sonrası tahmin edilir.
+
+> **Durum:** devam ediyor (iskelet). Sonuçlar, demo GIF'i ve Colab rozetleri proje ilerledikçe
+> eklenecek. English: [README.md](README.md).
+
+Tam spesifikasyon: [docs/TALIMAT.md](docs/TALIMAT.md)
+
+## Hızlı başlangıç (Windows PowerShell)
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e .
+pre-commit install
+pytest -m "not broker and not slow"
+```
+
+## Sınırlamalar
+
+Veri, düşük maliyetli sensörlerden değil referans istasyonlardan gelir; değerlendirme saha
+çalışması değil, trace-driven emülasyondur.
+
+## Lisans
+
+MIT.

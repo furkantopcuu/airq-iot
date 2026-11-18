@@ -1,0 +1,64 @@
+project: {name: airq-iot, seed: 42}
+paths: {raw: data/raw, interim: data/interim, processed: data/processed, models: models, reports: reports, db: data/airq.db}
+data:
+  beijing_url: "https://archive.ics.uci.edu/static/public/501/beijing+multi+site+air+quality+data.zip"
+  stations: [Aotizhongxin, Changping, Dingling, Dongsi, Guanyuan, Gucheng, Huairou, Nongzhanguan, Shunyi, Tiantan, Wanliu, Wanshouxigong]
+  ffill_limit: 3
+split:
+  train: ["2013-03-01 00:00", "2015-08-31 23:00"]
+  val:   ["2015-09-01 00:00", "2016-02-29 23:00"]
+  test:  ["2016-03-01 00:00", "2017-02-28 23:00"]
+episodes:
+  haze: {min_stations: 8, threshold: 150, min_hours: 6}
+  exceedance: {thresholds: [75, 150], min_hours: 3, merge_gap_h: 6}
+forecast:
+  horizons: [1, 6, 24]
+  pm25_lags: [0, 1, 2, 3, 6, 12, 24, 48, 72, 168]
+  copoll_lags: [0, 1, 3, 24]
+  rolling_windows: [3, 6, 24, 72]
+  neighbor_k: [0, 3, 11]
+  extreme_quantile: 0.95          # train p95 (~242 expected)
+  aqi_bands_pm25: [35, 75, 115, 150, 250]   # HJ 633-2012, verify
+  lgbm: {objective: regression_l2, learning_rate: 0.05, num_leaves: 63, min_child_samples: 50,
+         feature_fraction: 0.8, bagging_fraction: 0.8, bagging_freq: 1, lambda_l2: 1.0,
+         n_estimators: 3000, early_stopping: 100, deterministic: true, force_row_wise: true, num_threads: 0}
+  optuna_trials: 40
+  quantiles: [0.1, 0.5, 0.9]
+  sanity: {rmse_ref: {1: 20.0, 6: 52.0, 24: 81.0}, max_better_ratio: 0.25, max_r2_h24: 0.8}
+warning:
+  thresholds: [75, 150]
+  beta: 2
+  window_h: 24
+  cooldown_h: 6
+  delta_grid: [0, 5, 10, 15, 20, 30, 40]     # chosen on val
+perturb:
+  seeds: [0, 1, 2, 3, 4]
+  target_rate: [0.02, 0.03]
+  types:
+    spike:   {dur_h: [1, 3],  k: [3, 5, 8]}
+    stuck:   {dur_h: [6, 48]}
+    dropout: {dur_h: [3, 24]}
+edge:
+  range: [0, 999]
+  stuck_n: 4
+  rate_quantile: 0.999
+  pm_consistency: {eps: null, c: null}      # chosen on train
+  filter_default: on
+iot:
+  broker: {host: 127.0.0.1, port: 1883}
+  speedup: 3600
+  heartbeat_sim_min: 30
+  qos_telemetry: 1
+  predictor_wait_ms: 500
+bench:
+  loss_rate: [0.0, 0.05, 0.10, 0.20]
+  delay_ms: [0, 200]
+  speedup: [3600, 36000]
+  offline_devices: [1, 3, 6]
+  repeats: 3
+  sim_days: 14
+colab:
+  quick: {stations: [Dongsi, Huairou], test_months: 2, optuna: false, seeds: [0]}
+demo:
+  start_ts: null     # 24 h before a regional haze episode in episodes_test.csv; fill on day 15
+  scenarios: [gercek_haze_replay, sensor_takilmasi, cihaz_kopmasi, ag_bozulmasi]

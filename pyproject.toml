@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airq-iot"
+version = "0.0.1"
+description = "IoT-based air quality monitoring with PM2.5 forecasting and early warning"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+ml = [
+  "pandas>=2.1", "numpy>=1.26", "scikit-learn>=1.4", "lightgbm>=4.1", "optuna>=3.5",
+  "shap>=0.44", "scipy>=1.11", "statsmodels>=0.14", "pyarrow>=14", "pyyaml>=6.0",
+  "pydantic>=2.5", "pydantic-settings>=2.1", "requests>=2.31", "matplotlib>=3.8",
+]
+iot = ["paho-mqtt>=2.0", "amqtt>=0.11", "fastapi>=0.110", "uvicorn[standard]>=0.27", "psutil>=5.9"]
+dash = ["streamlit>=1.31", "plotly>=5.18"]
+dev = ["pytest>=8.0", "pytest-cov>=4.1", "ruff>=0.3", "pre-commit>=3.6", "nbmake>=1.5", "nbstripout>=0.7"]
+all = ["airq-iot[ml,iot,dash,dev]"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["broker: needs a real MQTT broker", "slow: long-running", "integration: integration test"]
