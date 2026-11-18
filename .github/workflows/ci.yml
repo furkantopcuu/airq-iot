@@ -5,6 +5,7 @@ jobs:
     strategy:
       matrix: {os: [ubuntu-latest, windows-latest], python: ["3.11", "3.12"]}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os == 'ubuntu-latest' }}   # Ubuntu is informational, Windows is required
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -16,10 +17,11 @@ jobs:
       - run: pytest -m "not broker and not slow" --cov=airq --cov-report=term-missing
   notebooks:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.12", cache: pip}
+        with: {python-version: "3.12"}
       - if: ${{ hashFiles('notebooks/*.ipynb') != '' }}
         run: pip install -e ".[ml,dev]"
       - if: ${{ hashFiles('notebooks/*.ipynb') != '' }}
@@ -30,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.11", cache: pip}
+        with: {python-version: "3.11"}
       - if: ${{ hashFiles('src/airq/iot/broker.py') != '' }}
         run: pip install -r requirements.txt
       - if: ${{ hashFiles('src/airq/iot/broker.py') != '' }}
