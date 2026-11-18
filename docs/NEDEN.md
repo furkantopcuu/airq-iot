@@ -87,3 +87,38 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Pickle/joblib (sürüm ve güvenlik riski), manifest'siz kayıt (sessiz hata).
 - Projede nerede: `src/airq/models/manifest.py`
 - Sunumda tek cümle: Modelin hangi özelliklerle eğitildiğini kayıt altında tutuyoruz; uyuşmazsa sistem hata verip duruyor.
+
+### MQTT (ve neden HTTP/CoAP değil)
+- Ne: Cihazların yayın (publish) yaptığı, ilgilenenlerin abone olduğu hafif bir mesajlaşma protokolü; aradaki "broker" mesajları dağıtır.
+- Neden: (1) Sensörler için tasarlanmış, az bant genişliği kullanır [R7]. (2) Yayıncı ve abone birbirini tanımaz; yeni bir servis (edge, sunucu, dashboard) cihazlara dokunmadan eklenir. (3) QoS, LWT ve retained mesaj gibi IoT'ye özgü özellikleri hazır sunar. Literatürdeki hava kalitesi mimarileri de MQTT kullanır [R18][R19].
+- Alternatifler ve neden seçilmedi: HTTP (her ölçüm için istek-yanıt, cihazdan sunucuya tek yön; cihaz kopmasını kendi başına bildirmez), CoAP (UDP tabanlı, araç ve broker ekosistemi daha dar) [R7].
+- Projede nerede: `src/airq/iot/`, `devices/`
+- Sunumda tek cümle: MQTT'yi, sensörler için tasarlandığı ve cihaz kopmasını kendisi bildirebildiği için seçtik.
+
+### QoS 1 ve idempotent kayıt
+- Ne: Telemetri "en az bir kez" teslim edilir; alınmazsa yeniden gönderilir.
+- Neden: Hava kalitesi ölçümü kaybolursa tahmin eksik veriyle çalışır; QoS 0'da ağ kaybında mesaj sessizce gider. Bedeli, aynı mesajın iki kez gelebilmesidir; bunu `(istasyon, ts)` anahtarıyla yapılan idempotent kayıt zararsız hale getirecek (Gün 6) ve tekrar oranını ölçeceğiz [R7].
+- Alternatifler ve neden seçilmedi: QoS 0 (kayıp), QoS 2 (iki aşamalı, fazla yük; saatlik veride gereksiz).
+- Projede nerede: `src/airq/iot/topics.py` (QoS tablosu)
+- Sunumda tek cümle: Mesaj kaybolmasın diye QoS 1 kullandık, olası tekrarı kayıt anında eliyoruz.
+
+### LWT ve retained durum mesajı
+- Ne: Cihaz bağlanırken broker'a "ben ölürsem 'offline' yayınla" vasiyeti bırakır (LWT); `online`/`offline` durumu retained olduğundan sonradan bağlanan da son durumu görür.
+- Neden: Cihaz çökerse kendisi haber veremez; broker bunu fark edip bildirir. Dashboard'un "kartı offline göster" davranışı buna dayanır ve testle doğrulandı (süreç öldürülünce `offline` geliyor).
+- Alternatifler ve neden seçilmedi: Yalnızca heartbeat zaman aşımı (yavaş ve belirsiz), veritabanında periyodik yoklama.
+- Projede nerede: `src/airq/devices/virtual_sensor.py`, `tests/integration/test_mqtt_devices.py`
+- Sunumda tek cümle: Bir cihaz aniden ölürse broker bunu kendisi duyuruyor; kartı gri yapmak için ayrıca yoklama gerekmiyor.
+
+### Sanal cihazlar (trace-driven emülasyon)
+- Ne: Gerçek kayıtlı ölçümler, her istasyon için ayrı bir MQTT istemcisi tarafından saat saat yayınlanır; `speedup=3600` ile 1 saniye = 1 simüle saat.
+- Neden: Fiziksel sensör yok; ama gerçek bir kentin gerçek haze olaylarını canlı sistemden geçirebiliyoruz. Eksik ölçüm `null` gider, `seq` sayacı kayıp tespitini mümkün kılar.
+- Alternatifler ve neden seçilmedi: Rastgele sentetik veri (gerçekçi olay yok), tek betikle doğrudan veritabanına yazmak (IoT katmanını ölçemeyiz).
+- Projede nerede: `src/airq/devices/`
+- Sunumda tek cümle: Gerçek ölçümleri sanal cihazlarla yeniden oynatıyoruz; saha çalışması iddiamız yok.
+
+### Mosquitto yerine amqtt (şimdilik) ve Pydantic şemaları
+- Ne: Mosquitto bu makinede kurulu değil; saf-Python amqtt broker'ı kullanıyoruz. Mesaj biçimi Pydantic şemasıyla doğrulanır.
+- Neden: amqtt kurulum gerektirmez ve CI'da çalışır. Ancak gecikme ölçümlerinde (RQ3a) Mosquitto daha gerçekçidir; kurulursa broker değişir ve makalede belirtilir. Şema, bozuk mesajı kapıda reddeder.
+- Alternatifler ve neden seçilmedi: Doğrulamasız JSON (bozuk veri tahmine sızar).
+- Projede nerede: `src/airq/iot/broker.py`, `schemas.py`
+- Sunumda tek cümle: Mesajlar şemayla doğrulanıyor; geçersiz olan edge'e daha gelmeden reddediliyor.
