@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "airq-iot: IoT-based air quality monitoring with PM2.5 forecasting and early warning"
+authors:
+  - family-names: Akbaba
+    given-names: Orhan
+  - family-names: Topçu
+    given-names: Furkan
+license: MIT
+repository-code: "https://github.com/furkantopcuu/airq-iot"

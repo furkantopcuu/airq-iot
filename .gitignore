@@ -24,3 +24,6 @@ paper/*.blg
 paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
+
+# Local-only specification (not published)
+docs/TALIMAT.md

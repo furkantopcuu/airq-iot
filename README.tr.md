@@ -8,8 +8,6 @@ sonrası tahmin edilir.
 > **Durum:** devam ediyor (iskelet). Sonuçlar, demo GIF'i ve Colab rozetleri proje ilerledikçe
 > eklenecek. English: [README.md](README.md).
 
-Tam spesifikasyon: [docs/TALIMAT.md](docs/TALIMAT.md)
-
 ## Hızlı başlangıç (Windows PowerShell)
 
 ```powershell
@@ -30,3 +28,7 @@ Veri, düşük maliyetli sensörlerden değil referans istasyonlardan gelir; de�
 ## Lisans
 
 MIT.
+
+## Yazarlar
+
+Orhan Akbaba, Furkan Topçu — İstanbul Medeniyet Üniversitesi, Bilgisayar Mühendisliği (IoT dersi dönem projesi).

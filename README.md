@@ -12,7 +12,7 @@ IoT devices over MQTT (trace-driven emulation), validated at an edge gateway, an
 
 `VirtualSensor x12 -> MQTT -> Edge gateway -> Ingest -> SQLite -> Predictor -> FastAPI -> Streamlit`
 
-See [docs/TALIMAT.md](docs/TALIMAT.md) for the full specification.
+The project specification is kept locally and is not part of this repository.
 
 ## Quick start (Windows PowerShell)
 
@@ -35,3 +35,7 @@ trace-driven emulation, not a field study.
 
 MIT. Dataset: Beijing Multi-Site Air-Quality Data, UCI ML Repository, doi:10.24432/C5RK5G
 (verify license on the UCI page).
+
+## Authors
+
+Orhan Akbaba, Furkan Topçu — Istanbul Medeniyet University, Computer Engineering (IoT course project).
