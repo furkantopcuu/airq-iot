@@ -49,7 +49,9 @@ def exceedance_events(
     hours are merged. Onset = first hour of the merged block. NaN counts as not exceeding."""
     vals = series.to_numpy(dtype=float)
     idx = series.index
-    blocks = [(s, e) for s, e in _runs(np.nan_to_num(vals, nan=-1.0) > theta) if e - s + 1 >= min_hours]
+    blocks = [
+        (s, e) for s, e in _runs(np.nan_to_num(vals, nan=-1.0) > theta) if e - s + 1 >= min_hours
+    ]
     merged: list[list[int]] = []
     for s, e in blocks:
         if merged and s - merged[-1][1] - 1 < merge_gap_h:
@@ -77,7 +79,9 @@ def label_all(pm25_wide: pd.DataFrame, cfg: dict) -> pd.DataFrame:
 
     ep = cfg["episodes"]
     parts = [
-        regional_haze(pm25_wide, ep["haze"]["min_stations"], ep["haze"]["threshold"], ep["haze"]["min_hours"])
+        regional_haze(
+            pm25_wide, ep["haze"]["min_stations"], ep["haze"]["threshold"], ep["haze"]["min_hours"]
+        )
     ]
     for station in pm25_wide.columns:
         for theta in ep["exceedance"]["thresholds"]:

@@ -61,6 +61,11 @@ def download_beijing(url: str, raw_dir: Path, force: bool = False) -> dict:
     csvs = sorted(extract_dir.rglob("PRSA_Data_*.csv"))
     if not csvs:
         raise FileNotFoundError(f"No PRSA_Data_*.csv found under {extract_dir}")
-    info = {"zip": zip_path.name, "sha256": digest, "csv_dir": str(csvs[0].parent), "n_csv": len(csvs)}
+    info = {
+        "zip": zip_path.name,
+        "sha256": digest,
+        "csv_dir": str(csvs[0].parent),
+        "n_csv": len(csvs),
+    }
     (raw_dir / "download.json").write_text(json.dumps(info, indent=2), encoding="utf-8")
     return info
