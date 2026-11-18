@@ -66,3 +66,24 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Grafik sinir ağları (GNN [R11][R12]): koordinat yok, süre ve açıklanabilirlik maliyeti yüksek; açık komşu özellikleri hafif bir yaklaşık.
 - Projede nerede: `src/airq/features/build.py`, `neighbors.py`
 - Sunumda tek cümle: Komşu istasyonları özellik olarak veriyoruz; faydasını komşusuz modelle karşılaştırarak ölçüyoruz.
+
+### Persistence baseline (ŷ = PM2.5(t))
+- Ne: "Bir sonraki saat de şimdiki gibi olacak" diyen en basit tahmin.
+- Neden: PM2.5 yavaş değiştiği için kısa ufukta yenilmesi zordur [R13]. Bir model onu geçemiyorsa işe yaramıyordur; tüm başarıyı "persistence'a göre % iyileşme" ile ölçüyoruz.
+- Alternatifler ve neden seçilmedi: Yalnızca ortalamayla karşılaştırmak (haksız derecede kolay bir çıta).
+- Projede nerede: `src/airq/models/baselines.py`
+- Sunumda tek cümle: Modelimizi en basit "değişmez" tahminle kıyaslıyoruz, çünkü kolay çıtayı geçmek bir şey kanıtlamaz.
+
+### LightGBM (ve neden LSTM/GNN değil)
+- Ne: Birçok küçük karar ağacını arka arkaya eğiten, tablo verisinde güçlü ve hızlı bir yöntem.
+- Neden: (1) Tablo özelliklerinde (gecikmeler, meteoroloji, komşu özetleri) derin ağlarla rekabetçi ve CPU'da dakikalar içinde eğitilir. (2) Eksik değerleri doğrudan işler. (3) SHAP ile açıklanabilir [R15][R26]. Sızıntısız protokolde ağaç modelleri literatürde güçlüdür [R13][R14].
+- Alternatifler ve neden seçilmedi: LSTM/CNN-LSTM [R9][R10] ve GNN [R11][R12]: daha fazla ayar ve süre gerektirir, koordinat olmadan GNN'in avantajı sınırlı; açık komşu özellikleri hafif bir yaklaşık ve ablasyonla test ediliyor.
+- Projede nerede: `src/airq/models/gbm.py`
+- Sunumda tek cümle: Tablo verisinde hızlı, açıklanabilir ve güçlü olduğu için LightGBM seçtik; komşu bilgisinin faydasını ablasyonla ölçtük.
+
+### Model manifest ve LightGBM metin formatı
+- Ne: Modeli pickle yerine LightGBM'in kendi metin dosyasıyla saklıyor, yanına özellik listesi ve sürüm bilgisini yazıyoruz.
+- Neden: Farklı ortamda (Colab, laptop) eğitilen modelin yanlış özelliklerle yüklenip sessizce kötü tahmin üretmesini önler; uyuşmazlıkta açık hata verir. Pickle sürümler arası kırılgandır.
+- Alternatifler ve neden seçilmedi: Pickle/joblib (sürüm ve güvenlik riski), manifest'siz kayıt (sessiz hata).
+- Projede nerede: `src/airq/models/manifest.py`
+- Sunumda tek cümle: Modelin hangi özelliklerle eğitildiğini kayıt altında tutuyoruz; uyuşmazsa sistem hata verip duruyor.
