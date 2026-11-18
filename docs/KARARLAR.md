@@ -14,4 +14,7 @@ Format: tarih · karar · gerekçe · kaynak.
 - 2026-11-18 · Önemli bulgu: train'de PM2.5 > PM10 oranı %8,2 (ALL); aşım p99,9 değeri yüksek. Edge fiziksel tutarlılık kuralının (ε, c) toleransı bu tanıya göre Gün 6'da seçilecek; kural gevşek olmalı. · reports/tables/physical_consistency.csv.
 - 2026-11-18 · Epizot etiketleri ham (doldurulmamış) PM2.5 üzerinden hesaplanır; NaN aşım sayılmaz. Epizot, başlangıcının düştüğü split'e atanır. · TALIMAT §2.5.
 - 2026-11-18 · İndirme önce `.part` dosyasına yazılır, geçerli zip ise yeniden adlandırılır (UCI bağlantısı bir kez yarıda kesildi). · download.py.
+- 2026-11-18 · Özellikler float32 (Colab belleği, §14.6). Rolling pencere t'yi içerir, min_periods = max(2, ceil(w/2)); yağış 24 saat toplamı min_periods=12. · TALIMAT §4.2.
+- 2026-11-18 · `edge`'den gelen `quality_flags` özellik olarak Gün 6'da (edge/quality.py yazılınca) eklenecek; şimdilik `*_missing` göstergeleri var. · TALIMAT §4.2.7.
+- 2026-11-18 · k=3 komşular train'de (ts <= 2015-08-31 23:00) ham PM2.5 korelasyonuyla seçilir; `models/neighbors.json`. k=11 hepsi. Hedef y = doldurulmamış PM2.5(t+h) (`make_target`). · TALIMAT §4.2.6.
 - 2026-11-18 · Python 3.11 yerelde kurulu (3.14 de var); proje 3.11/3.12 hedefler. Colab Python sürümü Gün 1'de kontrol edilecek. · TALIMAT §14.3.

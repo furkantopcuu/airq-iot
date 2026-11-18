@@ -52,3 +52,17 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Yalnızca saat bazlı sınıflandırma (kısa kesintiler olayı bölüp sayıyı şişirir).
 - Projede nerede: `src/airq/data/episodes.py`
 - Sunumda tek cümle: Uyarının değerini "olayı kaç saat önceden haber verdi" ile ölçüyoruz.
+
+### Tek özellik fonksiyonu (offline = online)
+- Ne: Hem model eğitiminde hem canlı sistemde aynı `build_features` fonksiyonunu çalıştırıyoruz.
+- Neden: İki ayrı kod yazılırsa eğitimde görülen özellikler ile canlıda hesaplananlar sessizce ayrışır (train/serve skew) ve model canlıda bozulur. Tek fonksiyon + parite testi bunu engeller.
+- Alternatifler ve neden seçilmedi: Canlı için ayrı optimize kod (hızlı ama tutarsızlık riski), önceden hesaplanmış özellik tablosu (canlı veriyle çalışmaz).
+- Projede nerede: `src/airq/features/build.py`
+- Sunumda tek cümle: Eğitimde ve canlıda aynı kod çalıştığı için modelin gördüğü veri değişmiyor.
+
+### Komşu istasyon özellikleri
+- Ne: Bir istasyonun tahminine, diğer istasyonların o anki PM2.5 ortalaması, medyanı, eğimi ve kaç komşudan veri geldiği gibi özetleri ekliyoruz.
+- Neden: Kirlilik dalgaları şehirde istasyondan istasyona yayılır; komşuları görmek özellikle 6 ve 24 saat sonrasını tahmin etmeyi kolaylaştırması beklenir (ölçülmeden iddia edilmez, ablasyonla test edilecek). Komşu eksikse hesaba katılmaz; kaç komşu olduğu da özellik olduğundan ağ kopmasının etkisi ölçülebilir.
+- Alternatifler ve neden seçilmedi: Grafik sinir ağları (GNN [R11][R12]): koordinat yok, süre ve açıklanabilirlik maliyeti yüksek; açık komşu özellikleri hafif bir yaklaşık.
+- Projede nerede: `src/airq/features/build.py`, `neighbors.py`
+- Sunumda tek cümle: Komşu istasyonları özellik olarak veriyoruz; faydasını komşusuz modelle karşılaştırarak ölçüyoruz.
