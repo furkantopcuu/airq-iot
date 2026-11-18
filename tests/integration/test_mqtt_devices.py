@@ -83,14 +83,23 @@ def test_fleet_publishes_ordered_telemetry_with_monotonic_seq_and_null_for_missi
     for st in stations:
         seqs = [m.seq for m in tele if m.station == st]
         assert seqs == list(range(6))  # monotonic, no gaps
-    # same ts, stations in order within each simulated hour
-    assert [m.station for m in tele[:2]] == stations
-    assert tele[0].ts == tele[1].ts
+    # Each station is its own MQTT connection: per-station order is guaranteed, cross-station
+    # arrival order is NOT (this is why the predictor waits for neighbors, spec 8.5).
+    for st in stations:
+        times = [m.ts for m in tele if m.station == st]
+        assert times == sorted(times)
+    by_ts: dict = {}
+    for m in tele:
+        by_ts.setdefault(m.ts, set()).add(m.station)
+    assert all(v == set(stations) for v in by_ts.values()) and len(by_ts) == 6
     missing = next(m for m in tele if m.station == "Alpha" and m.seq == 2)
     assert missing.pm25 is None and missing.pm10 == 1.0  # NaN -> null
     assert json.loads(next(p for t, p, _ in got if t.endswith("/telemetry")))["schema_version"] == 1
+    # heartbeats are QoS 0 and may trail the QoS 1 telemetry: wait for them before counting
+    expected_beats = 6 * 2 * 2  # 2 per sim hour (every 30 sim minutes) x 2 stations
+    _wait(lambda: sum(t.endswith("/heartbeat") for t, _, _ in got) >= expected_beats, 5)
     beats = [Heartbeat.from_json(p) for t, p, _ in got if t.endswith("/heartbeat")]
-    assert len(beats) == 6 * 2 * 2  # 2 heartbeats per sim hour (every 30 sim minutes) x 2 stations
+    assert len(beats) == expected_beats
     disconnect(sub)
 
 
