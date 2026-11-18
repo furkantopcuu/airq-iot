@@ -33,8 +33,8 @@ trace-driven emulation, not a field study.
 
 ## License
 
-MIT. Dataset: Beijing Multi-Site Air-Quality Data, UCI ML Repository, doi:10.24432/C5RK5G
-(verify license on the UCI page).
+MIT. Dataset: Beijing Multi-Site Air-Quality Data, UCI ML Repository,
+doi:10.24432/C5RK5G, licensed CC BY 4.0 (verified on the UCI dataset page).
 
 ## Authors
 
