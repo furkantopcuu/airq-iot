@@ -6,8 +6,8 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
-data/
-models/
+/data/
+/models/
 *.db
 *.db-wal
 *.db-shm
