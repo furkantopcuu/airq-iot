@@ -1,0 +1,35 @@
+{
+  "fit_on": "train",
+  "params": {
+    "lo": 0.0,
+    "hi": 999.0,
+    "stuck_n": 4,
+    "tau_rate": 181.0,
+    "pm_eps": 0.1,
+    "pm_c": 98.85
+  },
+  "clean_data_flag_rate_pct": {
+    "train": {
+      "missing": 2.0153,
+      "out_of_range": 0.0,
+      "rate_jump": 0.0957,
+      "stuck": 0.378,
+      "pm_inconsistent": 0.098
+    },
+    "val": {
+      "missing": 2.0356,
+      "out_of_range": 0.0,
+      "rate_jump": 0.1889,
+      "stuck": 0.145,
+      "pm_inconsistent": 0.0
+    },
+    "test": {
+      "missing": 2.2517,
+      "out_of_range": 0.0,
+      "rate_jump": 0.1113,
+      "stuck": 0.1246,
+      "pm_inconsistent": 0.0
+    }
+  },
+  "note": "rates are on CLEAN recorded data: any non-'missing' flag here is a false alarm"
+}

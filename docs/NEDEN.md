@@ -122,3 +122,24 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Yalnızca amqtt (kurulumsuz ama ölçüm için zayıf), RabbitMQ (ağır, kapsam dışı), doğrulamasız JSON (bozuk veri tahmine sızar).
 - Projede nerede: `src/airq/iot/broker.py`, `configs/mosquitto.conf`, `src/airq/iot/schemas.py`
 - Sunumda tek cümle: Ağ ölçümlerini yaygın kullanılan Mosquitto ile yaptık; mesajlar şemayla doğrulanıyor.
+
+### Edge katmanı ve veri kalitesi kuralları
+- Ne: Sensör ile sunucu arasındaki ara düğüm; gelen her mesajı doğrular, ölçümün güvenilir olup olmadığını işaretler ve sunucuya iletir.
+- Neden: Bozuk bir sensör değeri (takılı kalma, ani sıçrama) tahmini bozar. Kontrolü kaynağa yakın yapmak hem veriyi temizler hem de hatalı cihazı erkenden görünür kılar; literatürdeki edge mimarileri de aynı gerekçeyi kullanır [R5][R21][R22]. Kuralların false alarm oranı temiz veride ölçüldü: kural başına yaklaşık %0,1–0,4.
+- Alternatifler ve neden seçilmedi: Doğrulamayı sunucuda yapmak (hatalı veri ağdan geçer, edge'in yük azaltma faydası kaybolur), edge'de tahmin yapmak [R6] (modeli cihaza dağıtmak ve güncellemek zor; kapsamımız dışında).
+- Projede nerede: `src/airq/edge/quality.py`, `gateway.py`
+- Sunumda tek cümle: Bozuk ölçümü sunucuya varmadan işaretliyoruz; filtreyi açıp kapatarak tahmine etkisini canlı gösteriyoruz.
+
+### PM2.5 ≤ PM10 fiziksel tutarlılık kuralı
+- Ne: PM2.5 (ince partikül) tanım gereği PM10'un (kaba+ince) bir parçasıdır; PM2.5'in PM10'dan belirgin büyük çıkması ölçüm hatasıdır.
+- Neden: Literatürde nadiren açıkça kullanılır. Ancak gerçek veride PM2.5 > PM10 satırları %8,2; bu yüzden katı kural çok yanlış alarm verirdi. Toleransı (ε=0,1 ve c≈98,85) train'de kalan %0,1'lik uç değerlere göre seçtik; kural yalnızca belirgin tutarsızlıkları yakalar.
+- Alternatifler ve neden seçilmedi: Katı `PM2.5 ≤ PM10` (%8 yanlış alarm), kuralı hiç kullanmamak (bu hata türü kaçar).
+- Projede nerede: `src/airq/edge/quality.py` (`PM_INCONSISTENT`)
+- Sunumda tek cümle: Gerçek veride ince partikül bazen kaba partikülden büyük çıkıyor; toleransı veriden ölçüp kuralı ona göre gevşettik.
+
+### SQLite (ve neden PostgreSQL/TimescaleDB değil)
+- Ne: Tek dosyalık, kurulum gerektirmeyen veritabanı; WAL modunda yazıcı ve okuyucu aynı anda çalışabilir.
+- Neden: Bir şehir ağı için saatte 12 satırlık yük SQLite'a çok küçük; ayrı sunucu kurmadan Windows, CI ve Colab'da aynı şekilde çalışır. Tek yazıcı (ingest) kuralıyla yarış durumu yoktur; API salt-okunur bağlantı kullanır.
+- Alternatifler ve neden seçilmedi: PostgreSQL/TimescaleDB (ayrı sunucu, kurulum ve bakım; bu ölçekte fayda yok, kapsam dışı). Ölçeklenme sınırı makalede açıkça yazılacak.
+- Projede nerede: `src/airq/server/db.py`, `ingest.py`
+- Sunumda tek cümle: Yükümüz saatte 12 satır; ayrı veritabanı sunucusu kurmak yerine WAL modundaki SQLite yetiyor, ölçek sınırını da açıkça belirtiyoruz.
