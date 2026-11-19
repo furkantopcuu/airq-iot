@@ -1,0 +1,27 @@
+{
+  "evaluated_on": "test inputs (targets untouched)",
+  "evaluated_at": "2026-11-19T21:36:12",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "methods": [
+    "B0_persistence",
+    "M1_lgbm_k0",
+    "M2_lgbm_k11"
+  ],
+  "horizons": [
+    1,
+    6,
+    24
+  ],
+  "persistence_coverage": {
+    "clean": 1.0,
+    "edge_off": 0.9930958745837928,
+    "edge_on": 0.9794538566709201
+  },
+  "note": "synthetic faults; measures forecast robustness, not fault-detection quality"
+}

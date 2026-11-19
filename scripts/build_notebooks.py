@@ -241,6 +241,42 @@ for p in rq2(cfg):
             new_code_cell(EXPORT),
         ],
     )
+    _nb(
+        "04_robustness_rq3b",
+        "04 · RQ3b: faulty sensor inputs and the edge filter",
+        "Synthetic faults (spike, stuck, dropout; Ni et al. / Sharma et al. taxonomy) are injected "
+        "into the TEST inputs; three conditions are compared: clean, faulty with the edge filter "
+        "off, faulty with the edge filter on. Targets are never touched. This measures forecast "
+        "robustness, not fault-detection quality. Run notebooks 02 and 03 first.",
+        "QUICK: 1-2 min (1 seed); full: about 3 min per 5 seeds",
+        [
+            new_code_cell(
+                """from airq.pipelines.edge import run as fit_edge
+from airq.pipelines.rq3b import run_rq3b
+
+fit_edge(cfg)  # edge thresholds fitted on train
+summary = run_rq3b(cfg, quick=QUICK, seeds=SEEDS, force=QUICK)  # full run: guarded
+summary["persistence_coverage"]
+"""
+            ),
+            new_code_cell(
+                """import pandas as pd
+from IPython.display import Image, display
+from airq.env import resolve_paths
+from airq.pipelines.figures import rq3b
+
+tables = resolve_paths(cfg["paths"])["reports"] / "tables"
+rob = pd.read_csv(tables / "rq3b_robustness.csv")
+display(rob[rob["scope"].isin(["all", "affected"])].round(2))
+display(pd.read_csv(tables / "rq3b_detection.csv").round(2))
+for p in rq3b(cfg):
+    if p.suffix == ".png":
+        display(Image(filename=str(p)))
+"""
+            ),
+            new_code_cell(EXPORT),
+        ],
+    )
 
 
 if __name__ == "__main__":

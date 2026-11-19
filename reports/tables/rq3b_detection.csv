@@ -1,0 +1,5 @@
+type,hours,hours_flagged,segments,segments_detected,hours_flagged_pct,segments_detected_pct
+clean_test_hours,500111,1472,0,0,0.29433465770598927,
+dropout,4551,0,325,0,0.0,0.0
+spike,618,595,311,307,96.27831715210355,98.71382636655949
+stuck,8708,7792,313,312,89.4809370693615,99.68051118210863

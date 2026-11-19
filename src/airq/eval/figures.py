@@ -274,3 +274,64 @@ def rq2_pr_lead(pr: pd.DataFrame, hist: pd.DataFrame, out_dir: Path, name: str =
     b.legend(frameon=False)
     fig.tight_layout()
     return save(fig, out_dir, name)
+
+
+def rq3b_damage(rob: pd.DataFrame, out_dir: Path, name: str = "rq3b_damage") -> list[Path]:
+    """Fig. 9: RMSE increase caused by faulty inputs, edge filter off vs on.
+
+    Left: rows whose last 24 h of input contain a fault, by horizon, persistence vs main model.
+    Right: by fault type at the 6 h horizon for the main model.
+    """
+    apply_style()
+    models = [m for m in ("B0_persistence", "M2_lgbm_k11", "M1_lgbm_k0") if m in set(rob["method"])]
+    main = "M2_lgbm_k11" if "M2_lgbm_k11" in models else "M1_lgbm_k0"
+    pair = [m for m in ("B0_persistence", main) if m in models]
+    labels = {"B0_persistence": "persistence", main: "LightGBM (main)"}
+    fig, (a, b) = plt.subplots(1, 2, figsize=(FULL_W, 2.9))
+    hs = sorted(rob["h"].unique())
+    w = 0.8 / (2 * len(pair))
+    for i, m in enumerate(pair):
+        sub = rob[(rob["method"] == m) & (rob["scope"] == "affected")].set_index("h").reindex(hs)
+        for j, (col, lab, hatch) in enumerate(
+            (("damage_off", "edge off", ""), ("damage_on", "edge on", "//"))
+        ):
+            x = np.arange(len(hs)) + (2 * i + j - (2 * len(pair) - 1) / 2) * w
+            a.bar(
+                x,
+                sub[col],
+                w,
+                color=OKABE_ITO[[7, 0][i]],
+                hatch=hatch,
+                edgecolor="white" if hatch else "black",
+                linewidth=0.4,
+                label=f"{labels[m]}, {lab}",
+            )
+    a.set_xticks(range(len(hs)), [f"{h} h ahead" for h in hs])
+    a.set_ylabel("RMSE increase (µg/m³)")
+    a.set_title("Rows with a fault in the last 24 h")
+    a.legend(frameon=False, fontsize=6.5)
+    h6 = 6 if 6 in hs else hs[0]
+    kinds = [k for k in ("spike", "stuck", "dropout") if k in set(rob["scope"])]
+    for j, (col, lab, hatch) in enumerate(
+        (("damage_off", "edge off", ""), ("damage_on", "edge on", "//"))
+    ):
+        vals = [
+            rob[(rob["method"] == main) & (rob["h"] == h6) & (rob["scope"] == k)][col].mean()
+            for k in kinds
+        ]
+        b.bar(
+            np.arange(len(kinds)) + (j - 0.5) * 0.38,
+            vals,
+            0.38,
+            color=OKABE_ITO[0],
+            hatch=hatch,
+            edgecolor="white" if hatch else "black",
+            linewidth=0.4,
+            label=lab,
+        )
+    b.set_xticks(range(len(kinds)), kinds)
+    b.set_ylabel("RMSE increase (µg/m³)")
+    b.set_title(f"By fault type, main model, {h6} h ahead")
+    b.legend(frameon=False)
+    fig.tight_layout()
+    return save(fig, out_dir, name)

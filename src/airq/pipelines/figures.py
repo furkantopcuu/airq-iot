@@ -41,3 +41,10 @@ def rq2(cfg: dict) -> list:
     if meta and (t / "rq2_example.csv").exists():
         made += figures.rq2_example(pd.read_csv(t / "rq2_example.csv"), meta, out)
     return made
+
+
+def rq3b(cfg: dict) -> list:
+    """Figure 9 from the RQ3b table (run after scripts.run_robustness)."""
+    paths = resolve_paths(cfg["paths"])
+    t, out = paths["reports"] / "tables", paths["reports"] / "figures"
+    return list(figures.rq3b_damage(pd.read_csv(t / "rq3b_robustness.csv"), out))

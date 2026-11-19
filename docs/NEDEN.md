@@ -199,3 +199,10 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Grafana (kurulum ve veri kaynağı ayarı gerekir, uyarı ve senaryo kontrolünü özelleştirmek zor), React/JS (ayrı bir ön yüz ve süre maliyeti), doğrudan SQLite okuyan betik (API ve hata doğrulaması atlanır).
 - Projede nerede: `src/airq/dashboard/`
 - Sunumda tek cümle: Dashboard yalnızca API'den okuyor ve durumu renkle birlikte yazıyla da söylüyor; böylece projektörde ve renk körü izleyiciler için de okunur.
+
+### Sentetik hatalı girdi (spike, stuck, dropout) ve edge açık/kapalı karşılaştırması
+- Ne: Gerçek test verisine bilerek üç tür sensör hatası ekliyoruz (ani sıçrama, takılı kalma, kesinti) ve tahminin ne kadar bozulduğunu, edge kontrolü açıkken ve kapalıyken ölçüyoruz. Hedef değerlere dokunmuyoruz.
+- Neden: Sahada sensörler bozulur [R1][R21][R22]; hatalı girdinin tahmini ne kadar bozduğunu ve edge doğrulamasının bunu ne kadar önlediğini ölçmek bu çalışmanın katkılarından biri (K3). Hataları kontrollü ve tekrarlanabilir (tohumlu) ürettiğimiz için "edge açık" ile "kapalı" aynı bozulma üzerinde kıyaslanır. Hatalar sentetik olduğundan bu bir arıza tespiti başarısı iddiası değildir; yalnızca dayanıklılık ölçümüdür.
+- Alternatifler ve neden seçilmedi: Gerçek arızalı sensör verisi (elimizde yok), yalnızca temiz veriyle test (edge'in değeri ölçülemez), edge'i yalnızca tespit oranıyla değerlendirmek (tahmine etkisini göstermez).
+- Projede nerede: `src/airq/perturb/inject.py`, `src/airq/pipelines/rq3b.py`
+- Sunumda tek cümle: Sensörü bilerek bozup edge filtresini açıp kapattık; filtre basit modelde zararın büyük kısmını geri aldı, güçlü modelde etkisi daha küçük kaldı.
