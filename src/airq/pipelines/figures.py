@@ -48,3 +48,10 @@ def rq3b(cfg: dict) -> list:
     paths = resolve_paths(cfg["paths"])
     t, out = paths["reports"] / "tables", paths["reports"] / "figures"
     return list(figures.rq3b_damage(pd.read_csv(t / "rq3b_robustness.csv"), out))
+
+
+def rq3a(cfg: dict) -> list:
+    """Figure 8 from the RQ3a benchmark table (run after scripts.run_system_bench --aggregate)."""
+    paths = resolve_paths(cfg["paths"])
+    t, out = paths["reports"] / "tables", paths["reports"] / "figures"
+    return list(figures.rq3a_system(pd.read_csv(t / "rq3a_bench.csv"), out))

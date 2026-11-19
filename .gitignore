@@ -27,3 +27,6 @@ paper/*.fdb_latexmk
 
 # Local-only specification (not published)
 docs/TALIMAT.md
+
+# raw benchmark work dirs (databases, logs)
+reports/bench/work/

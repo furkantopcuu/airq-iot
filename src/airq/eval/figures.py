@@ -335,3 +335,79 @@ def rq3b_damage(rob: pd.DataFrame, out_dir: Path, name: str = "rq3b_damage") -> 
     b.legend(frameon=False)
     fig.tight_layout()
     return save(fig, out_dir, name)
+
+
+def rq3a_system(agg: pd.DataFrame, out_dir: Path, name: str = "rq3a_system") -> list[Path]:
+    """Fig. 8: delivery, latency and forecast damage under emulated network faults."""
+    apply_style()
+    net = agg[agg["offline_k"] == 0]
+    fast = net[net["speedup"] == 36000]
+    slow = net[net["speedup"] == 3600]
+    fig, axes = plt.subplots(1, 3, figsize=(FULL_W, 2.8))
+    a, b, c = axes
+    loss = sorted(fast["loss"].unique())
+    for d, mk in ((0.0, "o"), (200.0, "s")):
+        sub = fast[fast["delay_ms"] == d].sort_values("loss")
+        a.plot(
+            100 * sub["loss"],
+            100 * sub["pdr_mean"],
+            mk,
+            color=OKABE_ITO[0],
+            label=f"delay {d:.0f} ms",
+        )
+    a.plot(
+        [0, 100 * max(loss)],
+        [100, 100 * (1 - max(loss))],
+        color="black",
+        linewidth=0.8,
+        label="ideal",
+    )
+    a.set_xlabel("emulated loss (%)")
+    a.set_ylabel("PDR (%)")
+    a.set_title("Packet delivery ratio")
+    a.legend(frameon=False, fontsize=7)
+    for d, mk, col in ((0.0, "o", OKABE_ITO[2]), (200.0, "s", OKABE_ITO[3])):
+        s1 = fast[fast["delay_ms"] == d].sort_values("loss")
+        b.plot(
+            100 * s1["loss"],
+            s1["lat_db_p95_ms_mean"],
+            mk,
+            color=col,
+            label=f"to DB p95, delay {d:.0f} ms",
+        )
+    s2 = slow[slow["delay_ms"] == 0].sort_values("loss")
+    b.plot(
+        100 * s2["loss"],
+        s2["lat_warn_p50_ms_mean"],
+        "^",
+        color=OKABE_ITO[0],
+        label="to warning p50 (real time)",
+    )
+    b.set_yscale("log")
+    b.set_xlabel("emulated loss (%)")
+    b.set_ylabel("latency (ms)")
+    b.set_title("End-to-end latency")
+    b.legend(frameon=False, fontsize=6.5)
+    f0 = fast[fast["delay_ms"] == 0].sort_values("loss")
+    c.errorbar(
+        100 * f0["loss"],
+        f0["paired_delta_h1_mean"],
+        yerr=f0["paired_delta_h1_std"],
+        fmt="o-",
+        color=OKABE_ITO[0],
+        capsize=2,
+        label="36 000x (2 reps)",
+    )
+    c.plot(
+        100 * s2["loss"],
+        s2["paired_delta_h1_mean"],
+        "^",
+        color=OKABE_ITO[1],
+        label="3 600x (1 rep)",
+    )
+    c.set_xlabel("emulated loss (%)")
+    c.set_ylabel("RMSE increase, 1 h (µg/m³)")
+    c.set_title("Forecast damage")
+    c.legend(frameon=False, fontsize=7)
+    fig.tight_layout()
+    return save(fig, out_dir, name)

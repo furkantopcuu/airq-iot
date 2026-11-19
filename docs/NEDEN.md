@@ -206,3 +206,10 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Gerçek arızalı sensör verisi (elimizde yok), yalnızca temiz veriyle test (edge'in değeri ölçülemez), edge'i yalnızca tespit oranıyla değerlendirmek (tahmine etkisini göstermez).
 - Projede nerede: `src/airq/perturb/inject.py`, `src/airq/pipelines/rq3b.py`
 - Sunumda tek cümle: Sensörü bilerek bozup edge filtresini açıp kapattık; filtre basit modelde zararın büyük kısmını geri aldı, güçlü modelde etkisi daha küçük kaldı.
+
+### Uygulama katmanında ağ emülasyonu, özel broker ve ayrı süreçler (RQ3a)
+- Ne: Sensörden edge'e giden bağlantıdaki kaybı, gecikmeyi ve sıra bozulmasını yazılımla taklit ediyoruz; her ölçümde kendi Mosquitto'muzu başlatıp edge, ingest, predictor ve cihaz filosunu ayrı süreçler olarak çalıştırıyoruz.
+- Neden: Gerçek bozuk ağ kurmak mümkün değil; yazılım emülasyonu kontrollü ve tekrarlanabilir (tohumlu). Kaybı mesajın hiç yayınlanmaması olarak modelledik, çünkü sensör-gateway radyo bağlantısında kaybolan mesajı MQTT'nin kendi yeniden iletimi kurtarmaz. Ayrı süreçler gerçek dağıtıma benzer ve süreç başına CPU/RAM ölçmeyi mümkün kılar; özel broker koşuları birbirinden yalıtır.
+- Alternatifler ve neden seçilmedi: İşletim sistemi düzeyi `tc netem` (Windows'ta yok; kayıpta TCP kuyruk gecikmesini gösterirdi, bu bizim sınırlamamız), tek süreçte iş parçacıkları (GIL gecikmeyi bozar), paylaşılan broker (koşular birbirini etkiler).
+- Projede nerede: `src/airq/devices/netem.py`, `src/airq/pipelines/rq3a.py`
+- Sunumda tek cümle: Ağ bozulmasını kontrollü taklit edip gerçek servislerle ölçtük; kayıp arttıkça teslim oranı birebir düştü ve en yavaş halka tahmin servisi çıktı.

@@ -180,3 +180,56 @@ def test_broker_smoke_script_reports_ok(broker):
         timeout=60,
     )
     assert out.returncode == 0 and out.stdout.startswith("OK: pub/sub round trip")
+
+
+def test_netem_loss_drops_messages_but_keeps_seq_so_the_gap_is_visible(broker):
+    from airq.devices.netem import NetEm, NetParams
+
+    stations = ["NetA", "NetB"]
+    sub, got = _subscriber(broker, [topics.RAW_ALL], "netem-watch")
+    summary = run_fleet(
+        synthetic_raw(stations, 200), stations, "2016-03-01 00:00", "2016-03-09 07:00",
+        *broker, speedup=0, netem=NetEm(NetParams(loss_rate=0.3), seed=1),
+    )  # fmt: skip
+    assert summary["messages"] == 400 and 0.2 < summary["dropped"] / 400 < 0.4
+    expected = summary["messages"] - summary["dropped"]
+    assert _wait(lambda: len(got) == expected)
+    tele = [Telemetry.from_json(p) for _, p, _ in got]
+    for st in stations:
+        seqs = sorted(m.seq for m in tele if m.station == st)
+        assert len(seqs) == len(set(seqs))  # nothing is duplicated
+        assert seqs[-1] - len(seqs) + 1 >= 1 or len(seqs) < 200  # the gaps are in the seq stream
+    lost = sum(200 - len({m.seq for m in tele if m.station == st}) for st in stations)
+    assert lost == summary["dropped"]  # every dropped reading is one missing seq
+    disconnect(sub)
+
+
+def test_netem_delay_shows_up_in_the_end_to_end_latency(broker):
+    from datetime import datetime
+
+    from airq.devices.netem import NetEm, NetParams
+
+    sub, got = _subscriber(broker, [topics.RAW_ALL], "netem-delay-watch")
+    run_fleet(
+        synthetic_raw(["DelA"], 6), ["DelA"], "2016-03-01 00:00", "2016-03-01 05:00",
+        *broker, speedup=0, netem=NetEm(NetParams(delay_ms=200), seed=2),
+    )  # fmt: skip
+    assert _wait(lambda: len(got) == 6)
+    arrived = datetime.now()
+    lat = [Telemetry.from_json(p).sent_at for _, p, _ in got]
+    assert all((arrived - sent).total_seconds() >= 0.2 for sent in lat)  # >= the emulated delay
+    disconnect(sub)
+
+
+def test_offline_devices_announce_offline_and_publish_no_data(broker):
+    stations = ["UpA", "DownB"]
+    sub, got = _subscriber(broker, [topics.RAW_ALL, topics.STATUS_ALL], "offline-watch")
+    summary = run_fleet(
+        synthetic_raw(stations, 4), stations, "2016-03-01 00:00", "2016-03-01 03:00",
+        *broker, speedup=0, offline=["DownB"],
+    )  # fmt: skip
+    assert summary["devices"] == 1 and summary["offline_devices"] == 1 and summary["messages"] == 4
+    assert _wait(lambda: sum(t.endswith("/telemetry") for t, _, _ in got) == 4)
+    assert all("DownB" not in t for t, _, _ in got if t.endswith("/telemetry"))
+    assert _wait(lambda: any(t == "airq/DownB/status" and p == b"offline" for t, p, _ in got))
+    disconnect(sub)

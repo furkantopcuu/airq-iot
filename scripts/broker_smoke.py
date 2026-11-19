@@ -41,8 +41,9 @@ def main() -> int:
     rtt_ms = (time.monotonic() - t0) * 1000
     disconnect(pub)
     disconnect(sub)
-    if got != [b"ping"]:
-        print("FAIL: message not received")
+    # QoS 1 is "at least once": a duplicate delivery is allowed, a missing one is not
+    if b"ping" not in got:
+        print(f"FAIL: message not received (got {len(got)} messages)")
         return 1
     print(
         f"OK: pub/sub round trip {rtt_ms:.1f} ms on {host}:{port} (mosquitto: {mosquitto_path()})"
