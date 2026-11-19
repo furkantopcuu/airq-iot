@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 DRIVE_ROOT = Path("/content/drive/MyDrive/airq-iot")
@@ -29,11 +30,18 @@ def mount_drive_if_wanted(use_drive: bool) -> bool:
     return True
 
 
+def is_fixture() -> bool:
+    """AIRQ_FIXTURE=1: use small synthetic data in a temp dir; never touch the network or repo."""
+    return os.environ.get("AIRQ_FIXTURE", "") not in ("", "0", "false")
+
+
 def resolve_home() -> Path:
-    """AIRQ_HOME -> Drive (Colab) -> /content/airq-iot (Colab) -> repo root (local)."""
+    """AIRQ_HOME -> fixture temp dir -> Drive (Colab) -> /content/airq-iot -> repo root (local)."""
     env_home = os.environ.get("AIRQ_HOME")
     if env_home:
         return Path(env_home)
+    if is_fixture():
+        return Path(tempfile.gettempdir()) / "airq-fixture"
     if is_colab():
         return DRIVE_ROOT if DRIVE_ROOT.parent.exists() else COLAB_ROOT
     return repo_root()

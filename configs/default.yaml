@@ -3,6 +3,7 @@ paths: {raw: data/raw, interim: data/interim, processed: data/processed, models:
 data:
   beijing_url: "https://archive.ics.uci.edu/static/public/501/beijing+multi+site+air+quality+data.zip"
   stations: [Aotizhongxin, Changping, Dingling, Dongsi, Guanyuan, Gucheng, Huairou, Nongzhanguan, Shunyi, Tiantan, Wanliu, Wanshouxigong]
+  beijing_sha256: "b04da438b2f331ac0ffd45aebdfec0d20d2367feb5f6948c4b1f7ce1191e33c4"
   ffill_limit: 3
 split:
   train: ["2013-03-01 00:00", "2015-08-31 23:00"]

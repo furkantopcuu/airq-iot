@@ -20,6 +20,18 @@ pre-commit install
 pytest -m "not broker and not slow"
 ```
 
+## Colab notebook'ları
+
+ML kısmı (veri, EDA, tahmin, erken uyarı, dayanıklılık) tarayıcıda yeniden üretilebilir; canlı IoT sistemi
+(broker, cihaz filosu, edge, dashboard, demo) yalnızca yerelde çalışır.
+
+| Notebook | İçerik |
+|---|---|
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/00_setup_colab.ipynb) `00_setup_colab` | kurulum, indirme + SHA-256 kontrolü, temiz veri seti |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/01_data_eda.ipynb) `01_data_eda` | Tablo 1, korelasyon / eksik veri şekli, epizotlar |
+
+Her notebook `QUICK = True` ile başlar (2 istasyon, birkaç dakika); tam çalışma için `QUICK = False` yapın.
+
 ## Sınırlamalar
 
 Veri, düşük maliyetli sensörlerden değil referans istasyonlardan gelir; değerlendirme saha

@@ -143,3 +143,10 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: PostgreSQL/TimescaleDB (ayrı sunucu, kurulum ve bakım; bu ölçekte fayda yok, kapsam dışı). Ölçeklenme sınırı makalede açıkça yazılacak.
 - Projede nerede: `src/airq/server/db.py`, `ingest.py`
 - Sunumda tek cümle: Yükümüz saatte 12 satır; ayrı veritabanı sunucusu kurmak yerine WAL modundaki SQLite yetiyor, ölçek sınırını da açıkça belirtiyoruz.
+
+### Google Colab ve ince notebook'lar
+- Ne: Tüm mantık `src/airq/` paketindedir; notebook'lar yalnızca paket fonksiyonlarını çağırır.
+- Neden: GitHub'a gelen biri "Open in Colab" ile sonuçları tarayıcıda yeniden üretebilir; laptop yetmezse Colab yedek ortam olur. Mantığı notebook'a gömseydik iki kopya oluşur, biri bozulurdu. `AIRQ_FIXTURE=1` küçük sentetik veriyle notebook'ları internetsiz (CI'da) çalıştırır.
+- Alternatifler ve neden seçilmedi: Mantığı notebook'ta yazmak (kopya ve sürüm kayması), Colab'ı hiç desteklememek (yeniden üretilebilirlik zayıflar).
+- Projede nerede: `notebooks/`, `scripts/build_notebooks.py`, `src/airq/pipelines/colab.py`, `src/airq/data/fixture.py`
+- Sunumda tek cümle: Notebook'lar ince; aynı kod hem laptopta hem Colab'da çalışıyor ve CI'da sentetik veriyle her değişiklikte deneniyor.

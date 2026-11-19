@@ -16,7 +16,12 @@ def main() -> None:
     args = ap.parse_args()
     cfg = load_config()
     paths = resolve_paths(cfg["paths"])
-    info = download_beijing(cfg["data"]["beijing_url"], paths["raw"] / "beijing", args.force)
+    info = download_beijing(
+        cfg["data"]["beijing_url"],
+        paths["raw"] / "beijing",
+        args.force,
+        cfg["data"].get("beijing_sha256"),
+    )
     print(json.dumps(info, indent=2))
 
 

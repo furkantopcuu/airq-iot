@@ -41,13 +41,19 @@ def _fetch(url: str, dest: Path, retries: int = 5) -> None:
     raise RuntimeError(f"Download failed after {retries} attempts: {last}")
 
 
-def download_beijing(url: str, raw_dir: Path, force: bool = False) -> dict:
+def download_beijing(
+    url: str, raw_dir: Path, force: bool = False, expected_sha256: str | None = None
+) -> dict:
     """Download + extract the dataset into `raw_dir`; returns {zip, sha256, csv_dir}."""
     raw_dir.mkdir(parents=True, exist_ok=True)
     zip_path = raw_dir / ZIP_NAME
     if force or not zip_path.exists():
         _fetch(url, zip_path)
     digest = sha256_file(zip_path)
+    if expected_sha256 and digest != expected_sha256:
+        raise ValueError(
+            f"SHA-256 mismatch for {zip_path.name}: expected {expected_sha256}, got {digest}"
+        )
     extract_dir = raw_dir / "extracted"
     if force or not extract_dir.exists():
         with zipfile.ZipFile(zip_path) as zf:

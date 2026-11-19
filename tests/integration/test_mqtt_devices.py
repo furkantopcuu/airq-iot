@@ -169,3 +169,14 @@ def test_virtual_sensor_unit_behaviour_without_broker():
     assert a.pm25 == 5.0 and a.wd == "N"
     assert absent.pm25 is None and nan.pm25 is None and nan.wd is None
     assert s.device_id == "z-01"
+
+
+def test_broker_smoke_script_reports_ok(broker):
+    host, port = broker
+    out = subprocess.run(
+        [sys.executable, "-m", "scripts.broker_smoke", "--broker", f"{host}:{port}"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert out.returncode == 0 and out.stdout.startswith("OK: pub/sub round trip")

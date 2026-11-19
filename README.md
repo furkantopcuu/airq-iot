@@ -30,6 +30,20 @@ MQTT broker: install Mosquitto (`winget install EclipseFoundation.Mosquitto`) an
 `mosquitto -c configs\mosquitto.conf -v`; without it, `python -m airq.iot.broker` starts a pure-Python
 fallback (amqtt).
 
+## Colab notebooks
+
+The ML part (data, EDA, forecasting, early warning, robustness) reproduces in the browser; the IoT
+live system (broker, device fleet, edge, dashboard, demo) runs locally only.
+
+| Notebook | What it does |
+|---|---|
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/00_setup_colab.ipynb) `00_setup_colab` | install, download + SHA-256 check, build the cleaned dataset |
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/01_data_eda.ipynb) `01_data_eda` | Table 1, correlation / missing-data figure, episodes |
+
+Each notebook starts with `QUICK = True` (2 stations, a few minutes). Set `QUICK = False` for the full run.
+Results can be exported as `airq_artifacts_<date>.zip` and imported locally with
+`python -m scripts.import_artifacts <zip>` (checks the model manifest).
+
 ## Limitations
 
 Beijing data comes from reference stations, not low-cost sensors; the evaluation is a
