@@ -23,9 +23,11 @@ from airq.models.manifest import load_model_checked
 from airq.pipelines.rq1_final import MODEL_NAMES
 from airq.pipelines.tuning import Data
 from airq.warning.evaluate import (
+    combine_any,
     event_leads,
     false_alarm_stats,
     hourly_metrics,
+    matched_leads,
     summarize_leads,
 )
 from airq.warning.rules import apply_cooldown, select_delta, warning_flags
@@ -76,9 +78,12 @@ def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
     ep = pd.read_csv(tables / "episodes_test.csv", parse_dates=["start", "end"])
     in_test = ts_np >= test_start
 
+    spec_grid = sorted(w["delta_grid"])
+    # "wide" is a SUPERSET of the specified grid, so it can never choose a worse val delta
+    grids = {"spec": spec_grid, "wide": sorted(set(spec_grid) | set(range(0, 101, 10)))}
     rows, haze_rows, delta_rows, hist_rows, thresholds = [], [], [], [], {}
-    pr_curve_rows, alert_store = [], {}
-    for theta in w["thresholds"]:
+    pr_curve_rows, alert_store, matched_by_h = [], {}, {}
+    for grid_name, grid, theta in [(g, grids[g], t) for g in grids for t in w["thresholds"]]:
         events = ep[(ep["type"] == "exceedance") & (ep["threshold"] == theta)]
         for m in methods:
             any_alert = np.zeros(len(df), dtype=bool)
@@ -88,41 +93,51 @@ def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
                 m_va = horizon_mask(ts_all, "val", h, cfg).to_numpy() & ok
                 m_te = horizon_mask(ts_all, "test", h, cfg).to_numpy() & ok
                 yhat = preds[m][h]
-                delta, table = select_delta(
-                    y[m_va] > theta, yhat[m_va], theta, w["delta_grid"], w["beta"]
-                )
+                delta, table = select_delta(y[m_va] > theta, yhat[m_va], theta, grid, w["beta"])
                 for t in table:
                     delta_rows.append(
-                        {"method": m, "theta": theta, "h": h, **t, "chosen": t["delta"] == delta}
-                    )
-                thresholds.setdefault(m, {}).setdefault(str(theta), {})[str(h)] = delta
+                        {"grid": grid_name, "method": m, "theta": theta, "h": h, **t,
+                         "chosen": t["delta"] == delta}
+                    )  # fmt: skip
+                thresholds.setdefault(grid_name, {}).setdefault(m, {}).setdefault(str(theta), {})[
+                    str(h)
+                ] = delta
                 hm = hourly_metrics(y[m_te] > theta, yhat[m_te], theta, delta)
                 flags = warning_flags(yhat, theta, delta)
                 alert = np.zeros(len(df), dtype=bool)
                 for a, b in bounds.values():
                     alert[a:b] = apply_cooldown(flags[a:b], w["cooldown_h"])
                 any_alert |= alert
-                row = {"method": m, "theta": theta, "h": str(h), "delta": delta, **hm}
-                row.update(
-                    _event_columns(
-                        events,
-                        alert,
-                        ts_np,
-                        bounds,
-                        obs,
-                        theta,
-                        in_test,
-                        w["window_h"],
-                        hist_rows,
-                        m,
-                        theta,
-                        str(h),
-                    )
+                row = {
+                    "grid": grid_name,
+                    "method": m,
+                    "theta": theta,
+                    "h": str(h),
+                    "delta": delta,
+                    **hm,
+                }
+                cols, matched = _event_columns(
+                    events,
+                    alert,
+                    ts_np,
+                    bounds,
+                    obs,
+                    theta,
+                    in_test,
+                    w,
+                    hist_rows,
+                    m,
+                    f"{grid_name}:{h}",
+                    h,
                 )
+                row.update(cols)
+                matched_by_h[(grid_name, m, theta, h)] = matched
+                row.update(_matched_columns(matched))
                 rows.append(row)
-                alert_store[(m, theta, h)] = alert
+                alert_store[(grid_name, m, theta, h)] = alert
                 if (
-                    theta == 150
+                    grid_name == "spec"
+                    and theta == 150
                     and h == 6
                     and m in ("B0_persistence", "M1_lgbm_k0", MODEL_NAMES.get(max(data.ks), ""))
                 ):
@@ -134,33 +149,42 @@ def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
                         {"method": m, "precision": float(prec[i]), "recall": float(rec[i])}
                         for i in idx
                     ]
-            row = {"method": m, "theta": theta, "h": "any", "delta": np.nan}
-            row.update(
-                _event_columns(
-                    events,
-                    any_alert,
-                    ts_np,
-                    bounds,
-                    obs,
-                    theta,
-                    in_test,
-                    w["window_h"],
-                    hist_rows,
-                    m,
-                    theta,
-                    "any",
-                )
+            row = {"grid": grid_name, "method": m, "theta": theta, "h": "any", "delta": np.nan}
+            cols, _ = _event_columns(
+                events,
+                any_alert,
+                ts_np,
+                bounds,
+                obs,
+                theta,
+                in_test,
+                w,
+                hist_rows,
+                m,
+                f"{grid_name}:any",
+                None,
             )
+            row.update(cols)
+            any_matched = combine_any([matched_by_h[(grid_name, m, theta, h)] for h in horizons])
+            row.update(_matched_columns(any_matched))
+            _hist(hist_rows, m, f"{grid_name}:any", "matched", any_matched, w["window_h"], theta)
             rows.append(row)
-            alert_store[(m, theta, "any")] = any_alert
+            alert_store[(grid_name, m, theta, "any")] = any_alert
     # regional haze episodes (theta = 150, any station alerting counts)
     haze = ep[ep["type"] == "regional_haze"]
-    for m in methods:
+    haze_matched: dict[tuple, list] = {}
+    for grid_name, m in [(g, m) for g in grids for m in methods]:
         for h in [*horizons, "any"]:
-            alert = alert_store[(m, 150, h)]
+            alert = alert_store[(grid_name, m, 150, h)]
             times = ts_np[alert]
             leads = event_leads(haze["start"], times, w["window_h"])
             s = summarize_leads(leads)
+            if h == "any":
+                matched = combine_any(haze_matched[(grid_name, m)])
+            else:
+                matched = matched_leads(haze["start"], haze["end"], times, h, w["window_h"])
+                haze_matched.setdefault((grid_name, m), []).append(matched)
+            s.update(_matched_columns(matched))
             frac = []
             for onset in haze["start"]:
                 lo, hi = (
@@ -171,6 +195,7 @@ def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
                 frac.append(len(hit) / len(bounds))
             haze_rows.append(
                 {
+                    "grid": grid_name,
                     "method": m,
                     "h": str(h),
                     **s,
@@ -203,32 +228,57 @@ def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
         },
         "n_test_regional_haze": int(len(haze)),
         "example": example[1] if example is not None else None,
-        "note": "delta chosen on validation (F2), applied to test once, same for every method",
+        "grids": {k: v for k, v in grids.items()},
+        "note": "delta chosen on validation (F2); grid spec = as specified, wide = sensitivity",
     }
     guard.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return summary
 
 
-def _event_columns(
-    events, alert, ts_np, bounds, obs, theta, in_test, window_h, hist_rows, method, th, label
-):
-    """Event recall, lead-time distribution and false-alarm rate for one alert series."""
-    leads = []
-    for s, (a, b) in bounds.items():
-        onsets = events.loc[events["station"] == s, "start"]
-        leads += event_leads(onsets, ts_np[a:b][alert[a:b]], window_h)
-    out = summarize_leads(leads)
+def _matched_columns(matched: list[float | None]) -> dict:
+    """Event recall and lead-time quartiles under the horizon-matched definition."""
+    s = summarize_leads(matched)
+    return {
+        "m_event_recall": s["event_recall"],
+        "m_lead_median": s["lead_median"],
+        "m_lead_q25": s["lead_q25"],
+        "m_lead_q75": s["lead_q75"],
+    }
+
+
+def _hist(hist_rows, method, label, kind, leads, window_h, theta):
     caught = np.array([x for x in leads if x is not None])
     for lo in range(0, window_h + 1):
-        hist_rows.append({"method": method, "theta": th, "h": label, "lead_h": lo,
-                          "count": int(np.sum(caught == lo)) if len(caught) else 0})  # fmt: skip
+        hist_rows.append(
+            {"method": method, "theta": theta, "h": label, "kind": kind, "lead_h": lo,
+             "count": int(np.sum(caught == lo)) if len(caught) else 0}
+        )  # fmt: skip
+
+
+def _event_columns(
+    events, alert, ts_np, bounds, obs, theta, in_test, w, hist_rows, method, label, hz
+):
+    """Event metrics for one alert series: the spec definition (any alert in the 24 h before the
+    onset) and, when `hz` is given, the horizon-matched leads (returned for the union over h)."""
+    window_h = w["window_h"]
+    leads, matched = [], []
+    for s, (a, b) in bounds.items():
+        sub = events.loc[events["station"] == s]
+        times = ts_np[a:b][alert[a:b]]
+        leads += event_leads(sub["start"], times, window_h)
+        if hz is not None:
+            matched += matched_leads(sub["start"], sub["end"], times, hz, window_h)
+    out = summarize_leads(leads)
+    _hist(hist_rows, method, label, "spec", leads, window_h, theta)
+    if hz is not None:
+        _hist(hist_rows, method, label, "matched", matched, window_h, theta)
     fa = tot = 0
     for a, b in bounds.values():
         idx = np.flatnonzero(alert[a:b] & in_test[a:b])
         f, t = false_alarm_stats(idx, obs[a:b], theta)
         fa, tot = fa + f, tot + t
     out.update(n_alerts=tot, false_alarm_rate=(fa / tot) if tot else float("nan"))
-    return out
+    return out, matched
 
 
 def _example(data, preds, alert_store, haze, bounds, ts_np, obs, st, cfg):
@@ -256,14 +306,11 @@ def _example(data, preds, alert_store, haze, bounds, ts_np, obs, st, cfg):
             : (b - a) - h
         ]  # forecast made h hours earlier, aligned to its target hour
         out[f"yhat_h{h}"] = shifted[sel]
-        alert = alert_store[(main, 150, h)][a:b]
+        alert = alert_store[("wide", main, 150, h)][a:b]
         out[f"alert_h{h}"] = alert[sel]
-        first = ts_s[
-            alert
-            & (ts_s >= ep["start"] - pd.Timedelta(hours=cfg["warning"]["window_h"]))
-            & (ts_s <= ep["start"])
-        ]
-        meta[f"lead_h{h}"] = (
-            float((ep["start"] - first[0]) / pd.Timedelta(hours=1)) if len(first) else None
-        )
+        lead = matched_leads(
+            pd.Series([ep["start"]]), pd.Series([ep["end"]]), ts_s[alert].to_numpy(), h,
+            cfg["warning"]["window_h"],
+        )  # fmt: skip
+        meta[f"lead_h{h}"] = lead[0]
     return out, meta

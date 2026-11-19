@@ -178,3 +178,17 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Yalnızca rastgele istasyon bölmesi (tek bölme şansa bağlı), özellik önemini ağaç sayısından okumak (yanıltıcı).
 - Projede nerede: `src/airq/pipelines/rq1_final.py`
 - Sunumda tek cümle: Modelin hiç görmediği istasyonda da çalışıp çalışmadığını ve neye baktığını ayrı ayrı ölçtük.
+
+### Erken uyarı kuralı: eşik payı δ, F2 ve soğuma süresi
+- Ne: Tahmin eşiğin δ kadar altına bile inerse uyarı veriyoruz (ŷ > θ − δ). δ'yı doğrulama verisinde F2 skorunu en büyük yapacak şekilde seçiyoruz. Bir uyarı açıldıktan sonra 6 saat boyunca aynı istasyon için yeni uyarı vermiyoruz (soğuma).
+- Neden: Erken uyarıda bir kirlilik olayını kaçırmak (sağlık riski), yanlış alarmdan daha pahalıdır; F2 duyarlılığa (recall) daha çok ağırlık verir. δ güvenlik payı, modelin aşırı değerleri hep küçük tahmin etmesini (RQ1'de ölçtük) telafi eder. Soğuma, kirli havanın sürdüğü saatlerde aynı olay için yüzlerce bildirim gönderilmesini önler. δ yalnızca doğrulamada seçildiği için test sonucu uyarlanmaz.
+- Alternatifler ve neden seçilmedi: Sabit eşik (δ=0; tahmin küçük kaldığı için olayları geç yakalar), F1 (yanlış alarm ve kaçırmayı eşit sayar), her saat uyarı (kullanıcıyı boğar).
+- Projede nerede: `src/airq/warning/rules.py`, `src/airq/server/predictor.py` (canlı uygulama)
+- Sunumda tek cümle: Olay kaçırmak yanlış alarmdan pahalı olduğu için eşiğin biraz altında uyarıyoruz; payı doğrulama verisinde seçip test'e hiç bakmıyoruz.
+
+### "Ufukla eşleşen" öncül süre ölçümü
+- Ne: Bir uyarının ancak öngördüğü an gerçekten kirlilik olayının içine düşüyorsa o olayı "önceden haber verdi" saymak.
+- Neden: Kirlilik olayları sık olduğunda "olaydan önceki 24 saatte herhangi bir uyarı" kuralı, alakasız bir uyarıyı bile sayar; persistence gibi en basit yöntem bile %100 yakalama ve 16 saat öncül süre gösterir. Eşleşen tanımda öncül süre uyarının ufkunu aşamaz ve karşılaştırma gerçekten anlamlı olur. İki tanımı birlikte raporluyoruz.
+- Alternatifler ve neden seçilmedi: Yalnızca basit pencere tanımı (şişkin sonuç), yalnızca saat bazlı metrik (olay bazlı yararı göstermez).
+- Projede nerede: `src/airq/warning/evaluate.py` (`matched_leads`)
+- Sunumda tek cümle: "Haber verdi" demek için uyarının tahmin ettiği anın gerçekten olayın içinde olması gerekiyor; yoksa en basit yöntem bile mükemmel görünürdü.

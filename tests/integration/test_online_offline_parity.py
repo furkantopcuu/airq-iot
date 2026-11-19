@@ -73,7 +73,10 @@ def _wait(cond, timeout=120.0):
 @pytest.mark.parametrize("k", [0, 1])
 def test_online_features_and_predictions_equal_offline(broker, offline, tmp_path, k):
     models_dir = offline["models_dir"]
-    pred = OnlinePredictor(CFG, models_dir, k, STATIONS, wait_s=60.0, keep_log=True)
+    thresholds = {"75": {"1": 0, "6": 0, "24": 0}}  # fires often in the fixture data
+    pred = OnlinePredictor(
+        CFG, models_dir, k, STATIONS, wait_s=60.0, keep_log=True, thresholds=thresholds
+    )
     stop = threading.Event()
     db_path = tmp_path / "parity.db"
     gw = threading.Thread(
@@ -129,3 +132,19 @@ def test_online_features_and_predictions_equal_offline(broker, offline, tmp_path
     assert n_rows == n_ts * len(STATIONS) * len(CFG["forecast"]["horizons"])
     versions = {r[0] for r in con.execute("SELECT DISTINCT model_version FROM predictions")}
     assert len(versions) == 1
+
+    # live alerts == offline rule: yhat > 75 followed by the 6 h cooldown, per station and horizon
+    from airq.warning.rules import apply_cooldown, warning_flags
+
+    expected = set()
+    for station in STATIONS:
+        entries = sorted((e for e in pred.log if e.station == station), key=lambda e: e.ts)
+        for h in CFG["forecast"]["horizons"]:
+            flags = warning_flags(np.array([e.yhat[h] for e in entries]), 75, 0)
+            for i in np.flatnonzero(apply_cooldown(flags, CFG["warning"]["cooldown_h"])):
+                expected.add((station, entries[i].ts.isoformat(), h))
+    got = {
+        (r["station"], r["made_at_ts"], r["horizon"])
+        for r in con.execute("SELECT station, made_at_ts, horizon FROM warnings")
+    }
+    assert expected and got == expected

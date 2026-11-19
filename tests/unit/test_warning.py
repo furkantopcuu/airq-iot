@@ -88,3 +88,25 @@ def test_persistence_style_alert_has_lead_time_zero_at_best():
     assert lead == [0.0]  # persistence can only notice the event when it has started
     early = apply_cooldown(warning_flags(np.r_[np.full(8, 40.0), np.full(12, 90.0)], 75, 0), 6)
     assert event_leads(pd.Series([ts[8]]), ts.to_numpy()[early], 24) == [0.0]
+
+
+def test_matched_leads_ignore_alerts_about_other_events():
+    from airq.warning.evaluate import combine_any, matched_leads
+
+    onset, end = T("2016-03-05 12:00"), T("2016-03-05 20:00")
+    alerts = np.array(["2016-03-05 06:00", "2016-03-05 11:00"], dtype="datetime64[ns]")
+    # h=6: the alert at 06:00 forecasts 12:00 = onset (inside the event) -> lead 6; the one at
+    # 11:00 forecasts 17:00 (also inside) but is later, so the earliest match wins
+    assert matched_leads(pd.Series([onset]), pd.Series([end]), alerts, 6, 24) == [6.0]
+    # h=1: only an alert at 11:00 (forecasting 12:00) matches; 06:00 forecasts 07:00 (no event)
+    assert matched_leads(pd.Series([onset]), pd.Series([end]), alerts, 1, 24) == [1.0]
+    only_old = np.array(["2016-03-05 03:00"], dtype="datetime64[ns]")  # forecasts 04:00 / 09:00
+    assert matched_leads(pd.Series([onset]), pd.Series([end]), only_old, 1, 24) == [None]
+    assert matched_leads(pd.Series([onset]), pd.Series([end]), only_old, 6, 24) == [None]
+    # an alert issued after the event started is not an EARLY warning
+    late = np.array(["2016-03-05 13:00"], dtype="datetime64[ns]")
+    assert matched_leads(pd.Series([onset]), pd.Series([end]), late, 6, 24) == [None]
+    # the 24 h window also bounds long horizons
+    long = np.array(["2016-03-04 00:00"], dtype="datetime64[ns]")  # 36 h before the onset
+    assert matched_leads(pd.Series([onset]), pd.Series([end]), long, 24, 24) == [None]
+    assert combine_any([[6.0, None, 1.0], [None, None, 24.0]]) == [6.0, None, 24.0]

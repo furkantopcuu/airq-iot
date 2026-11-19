@@ -204,6 +204,43 @@ for p in rq1(cfg):
             new_code_cell(EXPORT),
         ],
     )
+    _nb(
+        "03_early_warning_rq2",
+        "03 · RQ2: early warning, lead time and haze episodes",
+        "Warning rule yhat > theta - delta (delta chosen on validation by F2, 6 h cooldown), "
+        "hourly precision/recall/PR-AUC, event recall and horizon-matched lead time, regional "
+        "haze episodes. Run notebook 02 first (it creates the models). The TEST split is "
+        "evaluated once in a full run; quick runs are demos.",
+        "QUICK: 1-2 min",
+        [
+            new_code_cell(
+                """from airq.pipelines.rq2 import run_rq2
+
+summary = run_rq2(cfg, quick=QUICK, force=QUICK)  # full run: guarded, test is seen once
+summary["n_test_exceedance_events"]
+"""
+            ),
+            new_code_cell(
+                """import pandas as pd
+from IPython.display import Image, display
+from airq.env import resolve_paths
+from airq.pipelines.figures import rq2
+
+paths = resolve_paths(cfg["paths"])
+tables = paths["reports"] / "tables"
+w = pd.read_csv(tables / "rq2_warning.csv")
+cols = ["grid", "method", "theta", "h", "delta", "precision", "recall", "f2", "pr_auc",
+        "m_event_recall", "m_lead_median", "false_alarm_rate"]
+display(w[w["grid"] == "spec"][cols].round(3))
+display(pd.read_csv(tables / "rq2_haze.csv").round(3))
+for p in rq2(cfg):
+    if p.suffix == ".png":
+        display(Image(filename=str(p)))
+"""
+            ),
+            new_code_cell(EXPORT),
+        ],
+    )
 
 
 if __name__ == "__main__":

@@ -24,3 +24,20 @@ def rq1(cfg: dict) -> list:
     if (t / "rq1_shap.csv").exists():
         made += figures.shap_groups(pd.read_csv(t / "rq1_shap.csv"), out)
     return made
+
+
+def rq2(cfg: dict) -> list:
+    """Figures 6-7 from the RQ2 outputs (run after scripts.run_warning)."""
+    import json
+
+    paths = resolve_paths(cfg["paths"])
+    t, out = paths["reports"] / "tables", paths["reports"] / "figures"
+    made = list(
+        figures.rq2_pr_lead(
+            pd.read_csv(t / "rq2_pr_curve.csv"), pd.read_csv(t / "rq2_lead_hist.csv"), out
+        )
+    )
+    meta = json.loads((paths["reports"] / "metrics" / "warning_test.json").read_text())["example"]
+    if meta and (t / "rq2_example.csv").exists():
+        made += figures.rq2_example(pd.read_csv(t / "rq2_example.csv"), meta, out)
+    return made

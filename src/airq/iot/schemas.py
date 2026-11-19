@@ -86,3 +86,26 @@ class Heartbeat(BaseModel):
     @classmethod
     def from_json(cls, payload: str | bytes) -> Heartbeat:
         return cls.model_validate_json(payload)
+
+
+class WarningMsg(BaseModel):
+    """Early warning published on airq/warnings/{station}."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    station: str
+    made_at_ts: datetime  # simulated time the forecast was issued
+    horizon: int
+    threshold: float
+    yhat: float
+    delta: float  # safety margin: the warning fired because yhat > threshold - delta
+    basis: str = "point"  # "point" forecast (q90-based warnings are RQ4)
+    sent_at: datetime
+    schema_version: Literal[1] = 1
+
+    def to_json(self) -> str:
+        return self.model_dump_json()
+
+    @classmethod
+    def from_json(cls, payload: str | bytes) -> WarningMsg:
+        return cls.model_validate_json(payload)

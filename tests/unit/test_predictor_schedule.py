@@ -64,3 +64,49 @@ def test_unknown_station_is_ignored_and_buffer_is_pruned():
         p.add(msg("A", h), now=0.0)
     p._prune(pd.Timestamp(T0 + timedelta(hours=399)))  # what predict() does after each hour
     assert len(p.buf["A"]) <= p.history_h + 25  # old hours are dropped
+
+
+def test_live_warnings_apply_the_margin_and_the_cooldown():
+    p = OnlinePredictor(CFG, None, 0, ["A"], thresholds={"150": {"6": 20, "24": 0}}, cooldown_h=6)
+    rows = []
+    for hour in range(14):
+        ts = (T0 + timedelta(hours=hour)).isoformat()
+        rows.append({"station": "A", "made_at_ts": ts, "horizon": 6, "yhat": 135.0})  # > 150 - 20
+        rows.append({"station": "A", "made_at_ts": ts, "horizon": 24, "yhat": 135.0})  # < 150 - 0
+    warns = []
+    for i in range(0, len(rows), 2):
+        warns += p.make_warnings(rows[i : i + 2])
+    assert [w["horizon"] for w in warns] == [6, 6, 6]  # the 24 h forecast never crosses 150
+    hours = [
+        (pd.Timestamp(w["made_at_ts"]) - pd.Timestamp(T0)) / pd.Timedelta(hours=1) for w in warns
+    ]
+    assert hours == [0.0, 6.0, 12.0]  # opens, 5 h suppressed, re-opens while still above
+    assert (
+        warns[0]["threshold"] == 150.0
+        and warns[0]["delta"] == 20.0
+        and warns[0]["basis"] == "point"
+    )
+    assert (
+        OnlinePredictor(CFG, None, 0, ["A"]).make_warnings(rows) == []
+    )  # no thresholds: no warnings
+
+
+def test_warning_message_schema_round_trips_and_rejects_extra_fields():
+    import pytest as _pytest
+    from pydantic import ValidationError
+
+    from airq.iot.schemas import WarningMsg
+
+    w = {
+        "station": "A",
+        "made_at_ts": "2016-03-01T00:00:00",
+        "horizon": 6,
+        "threshold": 150.0,
+        "yhat": 160.0,
+        "delta": 10.0,
+        "basis": "point",
+        "sent_at": "2026-11-19T12:00:00.100",
+    }
+    assert WarningMsg.from_json(WarningMsg(**w).to_json()).horizon == 6
+    with _pytest.raises(ValidationError):
+        WarningMsg(**w, extra=1)

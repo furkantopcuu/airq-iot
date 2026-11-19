@@ -46,6 +46,40 @@ def event_leads(
     return out
 
 
+def matched_leads(
+    onsets: pd.Series, ends: pd.Series, alert_times: np.ndarray, h: int, window_h: int = 24
+) -> list[float | None]:
+    """Horizon-matched lead time: an alert at issue time t for horizon h counts for an event
+    [onset, end] only if what it forecasts (t + h) falls INSIDE the event and t <= onset.
+
+    This removes the inflation of the plain "any alert in the last 24 h" rule: with frequent
+    exceedances an unrelated alert (e.g. one about the previous event) cannot count. Lead =
+    onset - earliest matching alert, so it never exceeds h.
+    """
+    alert_times = np.sort(np.asarray(alert_times, dtype="datetime64[ns]"))
+    out: list[float | None] = []
+    for onset, end in zip(pd.to_datetime(onsets), pd.to_datetime(ends), strict=True):
+        lo = max(onset - pd.Timedelta(hours=window_h), onset - pd.Timedelta(hours=h))
+        hi = min(onset, end - pd.Timedelta(hours=h))
+        i = np.searchsorted(alert_times, np.datetime64(lo, "ns"), side="left")
+        if lo <= hi and i < len(alert_times) and alert_times[i] <= np.datetime64(hi, "ns"):
+            out.append(
+                float((np.datetime64(onset, "ns") - alert_times[i]) / np.timedelta64(1, "h"))
+            )
+        else:
+            out.append(None)
+    return out
+
+
+def combine_any(per_h: list[list[float | None]]) -> list[float | None]:
+    """Union over horizons: an event is caught if any horizon caught it; lead = the earliest."""
+    out: list[float | None] = []
+    for vals in zip(*per_h, strict=True):
+        got = [v for v in vals if v is not None]
+        out.append(max(got) if got else None)
+    return out
+
+
 def false_alarm_stats(alert_idx: np.ndarray, obs: np.ndarray, theta: float, within_h: int = 24):
     """(false alerts, total alerts) for one station: an alert at row i is false if no observed
     value in rows i+1 .. i+within_h exceeds theta (missing values never count as exceedances)."""

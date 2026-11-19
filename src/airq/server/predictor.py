@@ -15,6 +15,7 @@ import json
 import threading
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -24,7 +25,7 @@ from airq.data.clean import clean
 from airq.features.build import FeatureConfig, build_features
 from airq.iot import topics
 from airq.iot.mqtt_client import connect_blocking, disconnect, make_client
-from airq.iot.schemas import MEASUREMENTS, Telemetry
+from airq.iot.schemas import MEASUREMENTS, Telemetry, WarningMsg
 from airq.models.manifest import git_short_hash, load_model_checked
 from airq.server import db
 
@@ -51,6 +52,8 @@ class OnlinePredictor:
     wait_s: float = 0.5
     history_h: int = HISTORY_H
     keep_log: bool = False
+    thresholds: dict | None = None  # {"150": {"6": delta, ...}} from warning_thresholds.json
+    cooldown_h: int = 6
     log: list[PredictionLog] = field(default_factory=list)
     late_dropped: int = 0
     expired: int = 0  # timestamps predicted after the wait ran out (some station missing)
@@ -64,6 +67,7 @@ class OnlinePredictor:
         self.fcfg = FeatureConfig.from_cfg(self.cfg, k=self.k, neighbors=self.neighbors)
         self.version = f"{config_hash(self.cfg)}-{git_short_hash()}"
         self._lock = threading.Lock()
+        self._last_alert: dict[tuple, pd.Timestamp] = {}
 
     # --- input ---------------------------------------------------------------------------
     def add(self, msg: Telemetry, now: float | None = None) -> None:
@@ -154,6 +158,40 @@ class OnlinePredictor:
                 self.log.append(PredictionLog(station, ts, f[meta.feature_names], yhat))
         return rows
 
+    def make_warnings(self, rows: list[dict]) -> list[dict]:
+        """Apply the early-warning rule (yhat > theta - delta) with the 6 h cooldown (spec 5.1).
+
+        Same logic as the offline `apply_cooldown`: an alert opens, the next ones are suppressed
+        until `cooldown_h` hours have passed since it opened.
+        """
+        if not self.thresholds:
+            return []
+        out = []
+        for r in rows:
+            made = pd.Timestamp(r["made_at_ts"])
+            for theta, by_h in self.thresholds.items():
+                delta = by_h.get(str(r["horizon"]))
+                if delta is None or not r["yhat"] > float(theta) - float(delta):
+                    continue
+                key = (r["station"], theta, r["horizon"])
+                last = self._last_alert.get(key)
+                if last is not None and made - last < pd.Timedelta(hours=self.cooldown_h):
+                    continue
+                self._last_alert[key] = made
+                out.append(
+                    {
+                        "station": r["station"],
+                        "made_at_ts": r["made_at_ts"],
+                        "horizon": r["horizon"],
+                        "threshold": float(theta),
+                        "yhat": r["yhat"],
+                        "delta": float(delta),
+                        "basis": "point",
+                        "sent_at": datetime.now().isoformat(timespec="milliseconds"),
+                    }
+                )
+        return out
+
     def _model(self, h: int, feature_names: list[str]):
         if h not in self.models:
             self.models[h] = load_model_checked(self.models_dir, f"h{h}_k{self.k}", feature_names)
@@ -179,11 +217,15 @@ def run(
     wait_ms: int | None = None,
     keep_log: bool = False,
     pred: OnlinePredictor | None = None,
+    thresholds: dict | None = None,
 ) -> OnlinePredictor:
     """Connect to the broker and predict until `stop` is set (pass `pred` to inspect it live)."""
     stop = stop or threading.Event()
     wait = (wait_ms if wait_ms is not None else cfg["iot"]["predictor_wait_ms"]) / 1000
-    pred = pred or OnlinePredictor(cfg, models_dir, k, stations, neighbors, wait, keep_log=keep_log)
+    pred = pred or OnlinePredictor(
+        cfg, models_dir, k, stations, neighbors, wait, keep_log=keep_log, thresholds=thresholds,
+        cooldown_h=cfg["warning"]["cooldown_h"],
+    )  # fmt: skip
     con = db.connect(db_path)
     client = make_client("predictor")
 
@@ -197,14 +239,36 @@ def run(
     try:
         while not stop.is_set():
             for ts in pred.ready():
-                for row in pred.predict(ts):
+                rows = pred.predict(ts)
+                for row in rows:
                     db.upsert_prediction(con, row)
+                for warn in pred.make_warnings(rows):
+                    db.upsert_warning(con, warn)
+                    msg = WarningMsg(**warn)
+                    client.publish(
+                        topics.topic(topics.WARNINGS, warn["station"]),
+                        msg.to_json(),
+                        qos=topics.WARNINGS.qos,
+                    )
                 con.commit()
             stop.wait(0.02)
     finally:
         disconnect(client)
         con.close()
     return pred
+
+
+def _load_thresholds(cfg: dict, models_dir: Path, k: int) -> dict | None:
+    """Val-chosen deltas of the configured grid for this model (warning_thresholds.json)."""
+    path = models_dir / "warning_thresholds.json"
+    if not path.exists():
+        return None
+    method = "M1_lgbm_k0" if k == 0 else f"M2_lgbm_k{k}"
+    return (
+        json.loads(path.read_text(encoding="utf-8"))
+        .get(cfg["warning"]["live_grid"], {})
+        .get(method)
+    )
 
 
 def main() -> None:
@@ -223,10 +287,11 @@ def main() -> None:
     nb_path = paths["models"] / "neighbors.json"
     if 0 < args.k < len(cfg["data"]["stations"]) - 1:
         neighbors = json.loads(nb_path.read_text(encoding="utf-8"))[f"k{args.k}"]
+    thresholds = _load_thresholds(cfg, paths["models"], args.k)
     stop = threading.Event()
     try:
         run(cfg, paths["models"], Path(args.db), host, int(port), args.k,
-            cfg["data"]["stations"], neighbors, stop)  # fmt: skip
+            cfg["data"]["stations"], neighbors, stop, thresholds=thresholds)  # fmt: skip
     except KeyboardInterrupt:
         stop.set()
 

@@ -95,3 +95,15 @@ def upsert_prediction(con: sqlite3.Connection, row: dict) -> None:
         f"INSERT OR REPLACE INTO predictions({cols}) VALUES ({marks})",
         [row.get(c) for c in PREDICTION_COLUMNS],
     )
+
+
+WARNING_COLUMNS = ["station", "made_at_ts", "horizon", "threshold", "yhat", "basis", "sent_at"]
+
+
+def upsert_warning(con: sqlite3.Connection, row: dict) -> None:
+    cols = ", ".join(WARNING_COLUMNS)
+    marks = ", ".join("?" for _ in WARNING_COLUMNS)
+    con.execute(
+        f"INSERT OR REPLACE INTO warnings({cols}) VALUES ({marks})",
+        [row.get(c) for c in WARNING_COLUMNS],
+    )

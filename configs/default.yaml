@@ -31,7 +31,8 @@ warning:
   beta: 2
   window_h: 24
   cooldown_h: 6
-  delta_grid: [0, 5, 10, 15, 20, 30, 40]     # chosen on val
+  delta_grid: [0, 5, 10, 15, 20, 30, 40]     # chosen on val (specified grid)
+  live_grid: wide                            # live system uses the val-chosen deltas of this grid
 perturb:
   seeds: [0, 1, 2, 3, 4]
   target_rate: [0.02, 0.03]

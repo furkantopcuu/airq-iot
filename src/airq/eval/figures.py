@@ -204,3 +204,73 @@ def shap_groups(shap: pd.DataFrame, out_dir: Path, name: str = "rq1_shap_groups"
     ax.set_title("What drives the forecast")
     fig.tight_layout()
     return save(fig, out_dir, name)
+
+
+def rq2_example(example: pd.DataFrame, meta: dict, out_dir: Path, name: str = "rq2_haze_example"):
+    """Fig. 6: observed PM2.5, 6 h and 24 h forecasts and the alerts around the largest haze."""
+    apply_style()
+    fig, ax = plt.subplots(figsize=(FULL_W, 3.0))
+    ts = pd.to_datetime(example["ts"])
+    onset = pd.Timestamp(meta["onset"])
+    ax.plot(ts, example["y_obs"], color="black", linewidth=1.2, label="observed")
+    ax.plot(ts, example["yhat_h6"], color=OKABE_ITO[0], linewidth=0.9, label="forecast 6 h ahead")
+    ax.plot(ts, example["yhat_h24"], color=OKABE_ITO[3], linewidth=0.9, label="forecast 24 h ahead")
+    ax.axhline(150, color=OKABE_ITO[7], linestyle=":", linewidth=0.8)
+    ax.text(ts.iloc[0], 156, "150 µg/m³", fontsize=7)
+    ax.axvline(onset, color=OKABE_ITO[2], linewidth=1.0)
+    top = float(np.nanmax(example["y_obs"])) * 1.05
+    for col, marker, color, lab in (
+        ("alert_h24", "v", OKABE_ITO[3], "alert (24 h forecast)"),
+        ("alert_h6", "v", OKABE_ITO[0], "alert (6 h forecast)"),
+    ):
+        sel = example[col].astype(bool)
+        y = top if col == "alert_h24" else top * 0.95
+        ax.scatter(ts[sel], np.full(sel.sum(), y), marker=marker, s=14, color=color, label=lab)
+    leads = ", ".join(
+        f"{k.split('_h')[1]} h: {v:.0f} h"
+        for k, v in meta.items()
+        if k.startswith("lead_h") and v is not None
+    )
+    ax.set_title(f"{meta['station']}: largest regional haze (green = onset); matched lead {leads}")
+    ax.set_ylabel("PM2.5 (µg/m³)")
+    ax.legend(frameon=False, fontsize=7, ncol=5, loc="upper center", bbox_to_anchor=(0.5, -0.22))
+    ax.set_ylim(top=top * 1.12)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return save(fig, out_dir, name)
+
+
+def rq2_pr_lead(pr: pd.DataFrame, hist: pd.DataFrame, out_dir: Path, name: str = "rq2_pr_lead"):
+    """Fig. 7: precision-recall (theta=150, 6 h) and horizon-matched lead-time distribution."""
+    apply_style()
+    labels = {"B0_persistence": "persistence", "M1_lgbm_k0": "M1 (k=0)", "M2_lgbm_k11": "M2 (k=11)"}
+    fig, (a, b) = plt.subplots(1, 2, figsize=(FULL_W, 2.9))
+    for i, (m, lab) in enumerate(labels.items()):
+        sub = pr[pr["method"] == m].sort_values("recall")
+        a.plot(
+            sub["recall"], sub["precision"], color=OKABE_ITO[[7, 1, 0][i]], label=lab, linewidth=1.2
+        )
+    a.set_xlabel("recall")
+    a.set_ylabel("precision")
+    a.set_title("PM2.5 > 150, 6 h ahead (test)")
+    a.legend(frameon=False)
+    h = hist[(hist["theta"] == 150) & (hist["kind"] == "matched") & (hist["h"] == "spec:any")]
+    w = 0.38
+    for i, m in enumerate(("B0_persistence", "M2_lgbm_k11")):
+        sub = h[h["method"] == m].sort_values("lead_h")
+        tot = max(sub["count"].sum(), 1)
+        b.bar(
+            sub["lead_h"] + (i - 0.5) * w,
+            100 * sub["count"] / tot,
+            w,
+            label=labels[m],
+            color=OKABE_ITO[7 if i == 0 else 0],
+            edgecolor="black",
+            linewidth=0.2,
+        )
+    b.set_xlabel("lead time (h), horizon-matched, any horizon")
+    b.set_ylabel("caught events (%)")
+    b.set_title("Lead time of caught exceedance events (> 150)")
+    b.legend(frameon=False)
+    fig.tight_layout()
+    return save(fig, out_dir, name)

@@ -1,0 +1,51 @@
+{
+  "evaluated_on": "test",
+  "evaluated_at": "2026-11-19T21:05:22",
+  "methods": [
+    "B0_persistence",
+    "B1_seasonal_naive",
+    "M1_lgbm_k0",
+    "M2_lgbm_k11"
+  ],
+  "n_test_exceedance_events": {
+    "75": 1467,
+    "150": 724
+  },
+  "n_test_regional_haze": 43,
+  "example": {
+    "station": "Dongsi",
+    "onset": "2017-01-04 15:00:00",
+    "hours": 71,
+    "peak": 586.0,
+    "model": "M2_lgbm_k11",
+    "lead_h6": 3.0,
+    "lead_h24": 19.0
+  },
+  "grids": {
+    "spec": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      30,
+      40
+    ],
+    "wide": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90,
+      100
+    ]
+  },
+  "note": "delta chosen on validation (F2); grid spec = as specified, wide = sensitivity"
+}
