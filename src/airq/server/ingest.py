@@ -54,6 +54,8 @@ class Ingest:
         elif msg.topic.endswith("/status"):
             station = topics.station_from_topic(msg.topic)
             self.q.put(("status", (station, msg.payload.decode("utf-8", "replace")), now))
+        elif msg.topic == topics.topic(topics.EDGE_STATS):
+            self.q.put(("edge_stats", msg.payload.decode("utf-8", "replace"), now))
 
     def start(self, host: str, port: int) -> None:
         self._thread.start()
@@ -61,7 +63,11 @@ class Ingest:
         self._client.on_message = self.on_message
         connect_blocking(self._client, host, port)
         self._client.subscribe(
-            [(topics.EDGE_ALL, topics.EDGE_TELEMETRY.qos), (topics.STATUS_ALL, topics.STATUS.qos)]
+            [
+                (topics.EDGE_ALL, topics.EDGE_TELEMETRY.qos),
+                (topics.STATUS_ALL, topics.STATUS.qos),
+                (topics.topic(topics.EDGE_STATS), topics.EDGE_STATS.qos),
+            ]
         )
 
     def stop(self) -> None:
@@ -100,6 +106,8 @@ class Ingest:
                         self._write_telemetry(con, payload, now)
                     elif kind == "status":
                         db.set_device_status(con, payload[0], payload[1], now.isoformat())
+                    elif kind == "edge_stats":
+                        db.add_event(con, now.isoformat(), "edge_stats", payload)
                 con.commit()
                 for ev in flushes:
                     ev.set()

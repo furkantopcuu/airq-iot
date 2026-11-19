@@ -117,8 +117,12 @@ def tune_one(data: Data, h: int, k: int, trials: int, models_dir: Path) -> dict:
     done = sum(t.state == optuna.trial.TrialState.COMPLETE for t in study.trials)
     if done < trials:
         study.optimize(objective, n_trials=trials - done)
-    complete = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
-    best = study.best_trial
+    # only the first `trials` trials count, so every study is compared at the same budget even if
+    # an earlier run of this study went further
+    complete = [
+        t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE and t.number < trials
+    ]
+    best = min(complete, key=lambda t: t.value)
     return {
         "best_params": best.params,
         "best_val_rmse": float(best.value),

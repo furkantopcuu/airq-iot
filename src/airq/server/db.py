@@ -47,9 +47,11 @@ def connect(path: Path | str, read_only: bool = False) -> sqlite3.Connection:
     path = Path(path)
     if read_only:
         con = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True, check_same_thread=False)
+        con.execute("PRAGMA busy_timeout=5000")
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
         con = sqlite3.connect(path, check_same_thread=False)
+        con.execute("PRAGMA busy_timeout=5000")  # ingest and predictor write different tables
         con.execute("PRAGMA journal_mode=WAL")
         con.execute("PRAGMA synchronous=NORMAL")
         con.executescript(SCHEMA)
@@ -77,3 +79,19 @@ def set_device_status(con: sqlite3.Connection, station: str, status: str, update
 
 def add_event(con: sqlite3.Connection, wall_ts: str, kind: str, payload: str) -> None:
     con.execute("INSERT INTO system_events VALUES (?, ?, ?)", (wall_ts, kind, payload))
+
+
+PREDICTION_COLUMNS = [
+    "station", "made_at_ts", "target_ts", "horizon", "yhat", "q10", "q90", "n_neighbors",
+    "model_version",
+]  # fmt: skip
+
+
+def upsert_prediction(con: sqlite3.Connection, row: dict) -> None:
+    """One prediction per (station, made_at_ts, horizon); a re-run replaces it."""
+    cols = ", ".join(PREDICTION_COLUMNS)
+    marks = ", ".join("?" for _ in PREDICTION_COLUMNS)
+    con.execute(
+        f"INSERT OR REPLACE INTO predictions({cols}) VALUES ({marks})",
+        [row.get(c) for c in PREDICTION_COLUMNS],
+    )

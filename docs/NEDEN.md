@@ -150,3 +150,17 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Mantığı notebook'ta yazmak (kopya ve sürüm kayması), Colab'ı hiç desteklememek (yeniden üretilebilirlik zayıflar).
 - Projede nerede: `notebooks/`, `scripts/build_notebooks.py`, `src/airq/pipelines/colab.py`, `src/airq/data/fixture.py`
 - Sunumda tek cümle: Notebook'lar ince; aynı kod hem laptopta hem Colab'da çalışıyor ve CI'da sentetik veriyle her değişiklikte deneniyor.
+
+### Canlı predictor, komşu bekleme süresi ve parite testi
+- Ne: Edge'den gelen ölçümleri bir kayan tamponda biriktirir, eğitimdekiyle aynı özellik fonksiyonunu çalıştırır ve 1/6/24 saat sonrasını tahmin eder. Her saatte diğer istasyonların ölçümünü en çok `predictor_wait_ms` (500 ms) bekler; gelmeyen istasyon "eksik" sayılır.
+- Neden: (1) İstasyonlar ayrı MQTT bağlantısı olduğundan aynı saatin mesajları karışık sırada gelir; beklemezsek komşu özellikleri rastgele eksik kalırdı. (2) Süre dolunca eksik sayıldığı için ağ bozulmasının tahmine etkisini (RQ3a) gerçekçi ölçeriz. (3) Eğitim ve canlıda aynı kod çalıştığından ayrışma olmadığını testle kanıtlarız: aynı veri hem doğrudan hem MQTT hattından geçiyor ve özellikler ile tahminler eşit çıkıyor.
+- Alternatifler ve neden seçilmedi: Beklemeden hemen tahmin (komşu verisi tutarsız), sonsuz bekleme (bir cihaz çökerse sistem takılır), özellikleri veritabanından yeniden okumak (gecikme ve ikinci bir kod yolu).
+- Projede nerede: `src/airq/server/predictor.py`, `tests/integration/test_online_offline_parity.py`
+- Sunumda tek cümle: Canlı sistem, modelin eğitildiği kodla birebir aynı özellikleri üretiyor; bunu aynı veriyi iki yoldan geçirip eşitliği ölçerek gösterdik.
+
+### FastAPI (salt-okunur API)
+- Ne: Dashboard'un ve diğer araçların veritabanını okuduğu küçük bir HTTP servisi.
+- Neden: Dashboard veritabanına doğrudan bağlanmaz; tek bir kapıdan okur, hatalı istekler 404/422 ile açıkça reddedilir. Otomatik şema doğrulaması ve belge sayfası (`/docs`) hazır gelir; Python'da Streamlit ve MQTT ile aynı dilde.
+- Alternatifler ve neden seçilmedi: Flask (doğrulama ve şema elle yazılır), dashboard'un doğrudan SQLite okuması (kontrol uçları ve yetki ileride eklenemez).
+- Projede nerede: `src/airq/server/api.py`
+- Sunumda tek cümle: Dashboard yalnızca API'den okuyor; hatalı isteği sessizce yutmuyor, açıkça reddediyor.

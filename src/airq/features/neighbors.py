@@ -29,3 +29,22 @@ def select_neighbors(
 def save_neighbors(neighbors: dict[str, dict[str, list[str]]], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(neighbors, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def ensure_neighbors(df: pd.DataFrame, cfg: dict, path: Path) -> dict[str, dict[str, list[str]]]:
+    """Write models/neighbors.json ({"k3": {station: [...]}}) from TRAIN data if it is missing.
+
+    The live predictor loads exactly these neighbor sets, so online and offline agree.
+    """
+    import json
+
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    n = df["station"].nunique()
+    out = {
+        f"k{k}": select_neighbors(df, k, cfg["split"]["train"][1])
+        for k in cfg["forecast"]["neighbor_k"]
+        if 0 < k < n - 1
+    }
+    save_neighbors(out, path)
+    return out
