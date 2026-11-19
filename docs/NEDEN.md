@@ -192,3 +192,10 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Yalnızca basit pencere tanımı (şişkin sonuç), yalnızca saat bazlı metrik (olay bazlı yararı göstermez).
 - Projede nerede: `src/airq/warning/evaluate.py` (`matched_leads`)
 - Sunumda tek cümle: "Haber verdi" demek için uyarının tahmin ettiği anın gerçekten olayın içinde olması gerekiyor; yoksa en basit yöntem bile mükemmel görünürdü.
+
+### Streamlit + Plotly dashboard (yalnızca API'den okur)
+- Ne: Canlı ağı, tahminleri ve uyarıları gösteren web arayüzü; veriyi yalnızca API'den okur.
+- Neden: (1) Python'da yazıldığı için tüm sistemle aynı dilde, ayrı bir ön yüz projesi gerektirmez. (2) Streamlit'in `fragment` özelliği sayfayı 1–5 saniyede bir kendiliğinden yeniler. (3) Plotly etkileşimli grafik verir (yakınlaşma, üzerine gelince değer). (4) Arayüz veritabanına doğrudan bağlanmadığı için tek kapıdan (API) okur; hata durumları açık gösterilir. Projektörde okunsun diye açık tema, büyük yazı, renk körü dostu palet kullanılır ve durum yalnızca renkle değil yazıyla da belirtilir (ör. "Çok ağır kirli", "UYARI").
+- Alternatifler ve neden seçilmedi: Grafana (kurulum ve veri kaynağı ayarı gerekir, uyarı ve senaryo kontrolünü özelleştirmek zor), React/JS (ayrı bir ön yüz ve süre maliyeti), doğrudan SQLite okuyan betik (API ve hata doğrulaması atlanır).
+- Projede nerede: `src/airq/dashboard/`
+- Sunumda tek cümle: Dashboard yalnızca API'den okuyor ve durumu renkle birlikte yazıyla da söylüyor; böylece projektörde ve renk körü izleyiciler için de okunur.

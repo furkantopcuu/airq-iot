@@ -1,0 +1,10 @@
+# Projector-friendly: light theme, high contrast, large fonts (see dashboard/app.py)
+[theme]
+base = "light"
+primaryColor = "#0072B2"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F2F2"
+textColor = "#000000"
+
+[browser]
+gatherUsageStats = false

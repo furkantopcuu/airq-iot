@@ -4,8 +4,10 @@ Run: uvicorn airq.server.api:app  (AIRQ_DB / AIRQ_REPORTS override the default p
 "Now" in this system is simulated time: windows are relative to a station's latest reading.
 """
 
+import csv
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime, timedelta
 from enum import IntEnum
@@ -14,6 +16,7 @@ from typing import Annotated
 
 import numpy as np
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from airq.server import db
@@ -215,6 +218,34 @@ def create_app(db_path: Path | str | None = None, reports_dir: Path | str | None
         return {
             p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(folder.glob("*.json"))
         }
+
+    safe_name = re.compile(r"^[A-Za-z0-9_\-]+$")
+
+    def reports_file(kind: str, name: str, suffix: str) -> Path:
+        if not safe_name.match(name):  # no path separators or dots: no traversal
+            raise HTTPException(422, "invalid name")
+        path = paths["reports"] / kind / f"{name}{suffix}"
+        if not path.is_file():
+            raise HTTPException(404, f"{kind}/{name}{suffix} not found")
+        return path
+
+    @app.get("/tables")
+    def tables():
+        """Names of the experiment result tables (reports/tables/*.csv)."""
+        folder = paths["reports"] / "tables"
+        return sorted(p.stem for p in folder.glob("*.csv")) if folder.exists() else []
+
+    @app.get("/tables/{name}")
+    def table(name: str, limit: Annotated[int, Query(ge=1, le=20000)] = 5000):
+        path = reports_file("tables", name, ".csv")
+        with path.open(encoding="utf-8", newline="") as fh:
+            reader = csv.DictReader(fh)
+            rows = [row for _, row in zip(range(limit), reader, strict=False)]
+        return {"name": name, "columns": reader.fieldnames or [], "rows": rows}
+
+    @app.get("/figures/{name}")
+    def figure(name: str):
+        return FileResponse(reports_file("figures", name, ".png"), media_type="image/png")
 
     @app.get("/system/stats")
     def system_stats(con: con_dep):

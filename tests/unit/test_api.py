@@ -102,3 +102,23 @@ def test_system_stats_reports_duplicates_latency_and_edge_counters(client):
     assert s["duplicate_rate"] == pytest.approx(1 / 101)
     assert s["latency_ms"]["p50"] == pytest.approx(5.0) and s["online_devices"] == 1
     assert s["edge"] == {"received": 201, "invalid": 0}
+
+
+def test_tables_and_figures_are_served_safely(client, tmp_path):
+    reports = tmp_path / "reports"
+    (reports / "tables").mkdir()
+    (reports / "tables" / "rq1_main.csv").write_text("h,model,rmse\n1,B0,19.6\n6,B0,54.9\n")
+    (reports / "figures").mkdir()
+    (reports / "figures" / "rq1_horizon.png").write_bytes(b"\x89PNG\r\n\x1a\nxx")
+    assert client.get("/tables").json() == ["rq1_main"]
+    t = client.get("/tables/rq1_main").json()
+    assert t["columns"] == ["h", "model", "rmse"] and len(t["rows"]) == 2
+    assert client.get("/tables/rq1_main", params={"limit": 1}).json()["rows"] == [
+        {"h": "1", "model": "B0", "rmse": "19.6"}
+    ]
+    assert client.get("/tables/nope").status_code == 404
+    assert client.get("/tables/..%2Fsecret").status_code in (404, 422)
+    assert client.get("/tables/a.b").status_code == 422
+    r = client.get("/figures/rq1_horizon")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert client.get("/figures/missing").status_code == 404
