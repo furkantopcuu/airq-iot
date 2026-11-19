@@ -193,13 +193,14 @@ def test_netem_loss_drops_messages_but_keeps_seq_so_the_gap_is_visible(broker):
     )  # fmt: skip
     assert summary["messages"] == 400 and 0.2 < summary["dropped"] / 400 < 0.4
     expected = summary["messages"] - summary["dropped"]
-    assert _wait(lambda: len(got) == expected)
-    tele = [Telemetry.from_json(p) for _, p, _ in got]
-    for st in stations:
-        seqs = sorted(m.seq for m in tele if m.station == st)
-        assert len(seqs) == len(set(seqs))  # nothing is duplicated
-        assert seqs[-1] - len(seqs) + 1 >= 1 or len(seqs) < 200  # the gaps are in the seq stream
-    lost = sum(200 - len({m.seq for m in tele if m.station == st}) for st in stations)
+
+    def unique() -> set[tuple[str, int]]:
+        # QoS 1 is at-least-once: a broker may redeliver, so count distinct (station, seq) pairs
+        return {(m.station, m.seq) for m in (Telemetry.from_json(p) for _, p, _ in list(got))}
+
+    assert _wait(lambda: len(unique()) == expected)
+    seen = unique()
+    lost = sum(200 - len({s for st2, s in seen if st2 == st}) for st in stations)
     assert lost == summary["dropped"]  # every dropped reading is one missing seq
     disconnect(sub)
 
