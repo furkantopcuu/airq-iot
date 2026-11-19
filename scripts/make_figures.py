@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from airq.config import load_config
-from airq.pipelines.figures import eda
+from airq.pipelines.figures import eda, rq1
 
 
 def main() -> None:
-    for p in eda(load_config()):
+    cfg = load_config()
+    for p in eda(cfg):
         print(p)
+    try:
+        for p in rq1(cfg):
+            print(p)
+    except FileNotFoundError:
+        print("RQ1 tables not found yet; run scripts.run_final first")
 
 
 if __name__ == "__main__":

@@ -12,3 +12,15 @@ def eda(cfg: dict) -> list:
     paths = resolve_paths(cfg["paths"])
     df = pd.read_parquet(paths["processed"] / "clean.parquet")
     return figures.corr_and_missing(df, paths["reports"] / "figures")
+
+
+def rq1(cfg: dict) -> list:
+    """Figures 3-5 from the RQ1 tables (run after scripts.run_final)."""
+    paths = resolve_paths(cfg["paths"])
+    t, out = paths["reports"] / "tables", paths["reports"] / "figures"
+    made = list(figures.rq1_horizon(pd.read_csv(t / "rq1_main.csv"), out))
+    loso = pd.read_csv(t / "rq1_loso.csv") if (t / "rq1_loso.csv").exists() else None
+    made += figures.rq1_ablation_loso(pd.read_csv(t / "rq1_ablation.csv"), loso, out)
+    if (t / "rq1_shap.csv").exists():
+        made += figures.shap_groups(pd.read_csv(t / "rq1_shap.csv"), out)
+    return made

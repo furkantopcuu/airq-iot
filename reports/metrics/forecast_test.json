@@ -1,0 +1,45 @@
+{
+  "evaluated_on": "test",
+  "evaluated_at": "2026-11-19T20:47:24",
+  "stations": [
+    "Aotizhongxin",
+    "Changping",
+    "Dingling",
+    "Dongsi",
+    "Guanyuan",
+    "Gucheng",
+    "Huairou",
+    "Nongzhanguan",
+    "Shunyi",
+    "Tiantan",
+    "Wanliu",
+    "Wanshouxigong"
+  ],
+  "train_p95": 232.0,
+  "by_horizon_best": {
+    "1": {
+      "best_rmse": 16.99371215926488,
+      "best_r2": 0.9579299554977107
+    },
+    "6": {
+      "best_rmse": 46.604181793327605,
+      "best_r2": 0.6840326896390163
+    },
+    "24": {
+      "best_rmse": 73.29139857229634,
+      "best_r2": 0.21848664553808295
+    }
+  },
+  "nowcast": {
+    "h": 0,
+    "model": "nowcast_lgbm_same_hour",
+    "n": 102753,
+    "rmse": 22.07284641326618,
+    "mae": 13.74968804276533,
+    "r2": 0.9288204718728619,
+    "smape": 25.614917303153177,
+    "bias": 2.7103060283939557
+  },
+  "sanity_alarms": [],
+  "note": "test evaluated once; models, hyper-parameters and main model frozen on validation"
+}

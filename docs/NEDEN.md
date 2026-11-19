@@ -164,3 +164,17 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Flask (doğrulama ve şema elle yazılır), dashboard'un doğrudan SQLite okuması (kontrol uçları ve yetki ileride eklenemez).
 - Projede nerede: `src/airq/server/api.py`
 - Sunumda tek cümle: Dashboard yalnızca API'den okuyor; hatalı isteği sessizce yutmuyor, açıkça reddediyor.
+
+### Diebold–Mariano testi, Holm düzeltmesi ve blok-bootstrap
+- Ne: "Model A, model B'den gerçekten daha mı iyi, yoksa şans mı?" sorusunu yanıtlayan istatistik testleri. Diebold–Mariano iki modelin hatalarını karşılaştırır; Holm, 12 istasyonu birlikte test ederken yanlış "anlamlı" bulguyu azaltır; blok-bootstrap güven aralığı verir.
+- Neden: Tahmin hataları ardışık saatlerde birbirine bağlıdır (otokorelasyon); klasik t-testi bunu yok sayıp aşırı güvenli sonuç verir. DM, h adımlı tahminler için bu bağımlılığı düzeltir [R24][R25]. Bootstrap'ta 24 saatlik bloklar yeniden örneklenerek bağımlılık korunur [R13]. 12 testin birlikte yorumlanması için Holm uygulanır.
+- Alternatifler ve neden seçilmedi: Eşleştirilmiş t-testi (bağımlılığı yok sayar), yalnızca RMSE farkını vermek (fark şans eseri olabilir).
+- Projede nerede: `src/airq/eval/stats.py`
+- Sunumda tek cümle: "Daha iyi" demek için yalnızca RMSE'ye bakmıyoruz; hataların zaman bağımlılığını hesaba katan testlerle farkın şans olmadığını gösteriyoruz.
+
+### LOSO (görülmemiş istasyon) ve SHAP
+- Ne: LOSO: bir istasyonu tamamen dışarıda bırakıp modeli diğer 11 istasyonla eğitmek ve dışarıdaki istasyonda sınamak. SHAP: bir tahminin hangi özelliklerden ne kadar etkilendiğini hesaplamak.
+- Neden: Yeni bir kuruluma (hiç verisi olmayan istasyon) genelleme iddiası ancak LOSO ile sınanır [R13][R14]. SHAP, modelin "kara kutu" olmadığını gösterir ve komşu bilgisinin ne kadar kullanıldığını ölçer [R26]; ancak özelliğin kullanılması, doğruluğa artımlı katkı vermesi demek değildir, bu yüzden SHAP'ı ablasyon sonuçlarıyla birlikte yorumluyoruz.
+- Alternatifler ve neden seçilmedi: Yalnızca rastgele istasyon bölmesi (tek bölme şansa bağlı), özellik önemini ağaç sayısından okumak (yanıltıcı).
+- Projede nerede: `src/airq/pipelines/rq1_final.py`
+- Sunumda tek cümle: Modelin hiç görmediği istasyonda da çalışıp çalışmadığını ve neye baktığını ayrı ayrı ölçtük.

@@ -343,7 +343,8 @@ def loso(cfg: dict, quick: bool = False, force: bool = False) -> pd.DataFrame:
         for h in cfg["forecast"]["horizons"]:
             d = data.horizon(h)
             y = d["y"]
-            hp = json.loads((p["models"] / f"hparams_h{h}_k{max(data.ks)}.json").read_text())
+            hp_file = p["models"] / f"hparams_h{h}_k{max(data.ks)}.json"
+            best = json.loads(hp_file.read_text())["best_params"] if hp_file.exists() else {}
             tr = d["m_tr"] & (st_all != s)
             va = d["m_va"] & (st_all != s)
             te = (
@@ -352,9 +353,7 @@ def loso(cfg: dict, quick: bool = False, force: bool = False) -> pd.DataFrame:
                 & ~np.isnan(d["b0"])
                 & (st_all == s)
             )
-            model = train_lgbm(
-                feats[tr], y[tr], feats[va], y[va], names, cfg, params_override=hp["best_params"]
-            )
+            model = train_lgbm(feats[tr], y[tr], feats[va], y[va], names, cfg, params_override=best)
             pred = model.predict(feats.loc[te, names], num_iteration=model.best_iteration)
             r = rmse(y[te], pred)
             b0 = rmse(y[te], d["b0"][te])

@@ -158,6 +158,52 @@ pd.concat(rows, axis=1).fillna(0).astype(int)
             new_code_cell(EXPORT),
         ],
     )
+    _nb(
+        "02_forecast_rq1",
+        "02 · RQ1: forecasting, neighbor ablation, LOSO, SHAP",
+        "Baselines (persistence, seasonal-naive, Ridge) and LightGBM with 0 / 3 / 11 neighbor "
+        "stations; Diebold-Mariano, Holm, Wilcoxon and block-bootstrap statistics; "
+        "leave-one-station-out; TreeSHAP group shares. QUICK mode skips Optuna (default "
+        "hyper-parameters). The TEST split is evaluated once in a full run; quick runs are demos "
+        "and may be repeated.",
+        "QUICK: 3-6 min; full run with Optuna: hours (resumable)",
+        [
+            new_code_cell(
+                """from airq.pipelines.rq1 import run_v0
+from airq.pipelines.rq1_final import evaluate_test, loso, shap_groups
+from airq.pipelines.tuning import run_tuning
+
+if RUN_OPTUNA:
+    run_tuning(cfg, quick=QUICK, trials=20)  # TPE on validation only, resumable
+else:
+    run_v0(cfg, quick=QUICK)  # default hyper-parameters, validation only
+"""
+            ),
+            new_code_cell(
+                """summary = evaluate_test(cfg, quick=QUICK, force=QUICK)  # full run: seen once
+shap_groups(cfg, quick=QUICK)
+loso(cfg, quick=QUICK, force=QUICK)
+summary["by_horizon_best"]
+"""
+            ),
+            new_code_cell(
+                """import pandas as pd
+from IPython.display import Image, display
+from airq.env import resolve_paths
+from airq.pipelines.figures import rq1
+
+paths = resolve_paths(cfg["paths"])
+tables = paths["reports"] / "tables"
+display(pd.read_csv(tables / "rq1_main.csv").round(2))
+display(pd.read_csv(tables / "rq1_ablation.csv").round(2))
+for p in rq1(cfg):
+    if p.suffix == ".png":
+        display(Image(filename=str(p)))
+"""
+            ),
+            new_code_cell(EXPORT),
+        ],
+    )
 
 
 if __name__ == "__main__":
