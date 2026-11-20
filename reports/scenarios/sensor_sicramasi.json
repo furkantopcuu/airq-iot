@@ -1,0 +1,190 @@
+{
+  "scenario": "sensor_sicramasi",
+  "description": "Dongsi PM2.5 sens\u00f6r\u00fcnde 3 saatlik s\u0131\u00e7rama (k=8 \u03c3); edge filtresi \u00f6nce kapal\u0131, sonra a\u00e7\u0131k.",
+  "sim_start": "2016-06-01 00:00:00",
+  "sim_zero": "2016-06-11 00:00:00",
+  "sim_end": "2016-06-13 12:00:00",
+  "speedup": 7200.0,
+  "fleet_wall_s": 151.8,
+  "drain_s": 18.0,
+  "steps_fired": 4,
+  "steps_total": 4,
+  "step_log": [
+    {
+      "step": 0,
+      "at_h": 0.0,
+      "label": null,
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "EdgeControl",
+      "ok": true,
+      "cmd_id": "a2b63ee7-aea0-4a52-8a7b-f0dadb7f85f5",
+      "errors": []
+    },
+    {
+      "step": 1,
+      "at_h": 0.0,
+      "label": "spike-edge-off",
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "Command",
+      "ok": true,
+      "cmd_id": "ac4cc3fb-ebab-4969-8daa-79f26197ab7b",
+      "errors": []
+    },
+    {
+      "step": 2,
+      "at_h": 14.0,
+      "label": null,
+      "sim_ts": "2016-06-11T14:00:00",
+      "kind": "EdgeControl",
+      "ok": true,
+      "cmd_id": "c04f4c1e-d4d2-4671-b620-1aeafca29bf5",
+      "errors": []
+    },
+    {
+      "step": 3,
+      "at_h": 14.0,
+      "label": "spike-edge-on",
+      "sim_ts": "2016-06-11T14:00:00",
+      "kind": "Command",
+      "ok": true,
+      "cmd_id": "7b5bfc78-2bc6-4069-b799-3a37c9544e9f",
+      "errors": []
+    }
+  ],
+  "scorecard": [
+    {
+      "label": "spike-edge-off",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "off",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-11T04:00:00",
+      "n_forecasts": 12,
+      "mae_next_6h_h1": 139.7801813996629,
+      "mae_next_6h_h6": 49.666767952234665,
+      "peak_forecast_h6": 87.69303584194215,
+      "min_n_neighbors": 11.0,
+      "warned": true,
+      "matched": false,
+      "lead_time_h": null,
+      "n_onsets": 0,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": null,
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 1.0
+    },
+    {
+      "label": "spike-edge-on",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "on",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T15:00:00",
+      "t1": "2016-06-11T18:00:00",
+      "n_forecasts": 12,
+      "mae_next_6h_h1": 9.651369445481778,
+      "mae_next_6h_h6": 8.104032834358257,
+      "peak_forecast_h6": 54.001762366269574,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "n_onsets": 0,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": null,
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 1.8499999999999996
+    }
+  ],
+  "expected": [
+    {
+      "label": "spike-edge-off",
+      "metric": "peak_forecast_h6",
+      "relation": "greater_than",
+      "ref": "spike-edge-on",
+      "value": null,
+      "measured": 87.69303584194215,
+      "reference": 54.001762366269574,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "spike-edge-off",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    }
+  ],
+  "reference": "recorded data replay (server/truth.py)",
+  "evaluated_at": "2026-11-20T11:22:20",
+  "scorecard_v1": [
+    {
+      "label": "spike-edge-off",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "off",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-11T04:00:00",
+      "n_forecasts": 12,
+      "mae_next_6h_h1": 139.7801813996629,
+      "mae_next_6h_h6": 49.666767952234665,
+      "peak_forecast_h6": 87.69303584194215,
+      "min_n_neighbors": 11.0,
+      "warned": true,
+      "matched": false,
+      "lead_time_h": null,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 1.0
+    },
+    {
+      "label": "spike-edge-on",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "on",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T15:00:00",
+      "t1": "2016-06-11T18:00:00",
+      "n_forecasts": 12,
+      "mae_next_6h_h1": 9.651369445481778,
+      "mae_next_6h_h6": 8.104032834358257,
+      "peak_forecast_h6": 54.001762366269574,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 1.8499999999999996
+    }
+  ],
+  "expected_v1": [
+    {
+      "label": "spike-edge-off",
+      "metric": "peak_forecast_h6",
+      "relation": "greater_than",
+      "ref": "spike-edge-on",
+      "value": null,
+      "measured": 87.69303584194215,
+      "reference": 54.001762366269574,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "spike-edge-off",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    }
+  ],
+  "scoring_version": 2,
+  "rescored_at": "2026-11-20T11:31:33"
+}

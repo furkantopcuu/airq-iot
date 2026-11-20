@@ -1,0 +1,16 @@
+name: cihaz_kopmasi
+description: "Üç cihaz (Dongsi, Huairou, Gucheng) 24 saat çevrimdışı olur; kalan istasyonların komşu sayısı düşer, tahmin hatası değişir."
+start: "2016-06-01 00:00"
+warmup_h: 240
+duration_h: 36
+steps:
+  - at_h: 0
+    command: {target: Dongsi, mode: offline, duration_h: 24, label: offline-dongsi}
+  - at_h: 0
+    command: {target: Huairou, mode: offline, duration_h: 24, label: offline-huairou}
+  - at_h: 0
+    command: {target: Gucheng, mode: offline, duration_h: 24, label: offline-gucheng}
+  - at_h: 0
+    command: {kind: mark, label: three-offline, duration_h: 24}
+expected:
+  - {label: three-offline, metric: min_n_neighbors, relation: less_than, value: 11}

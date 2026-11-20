@@ -1,0 +1,12 @@
+scenario,label,metric,relation,reference,measured,verdict
+ag_bozulmasi,net-degraded,delivery_ratio,less_than,0.95,0.8821548821548821,confirmed
+ag_bozulmasi,net-degraded,latency_p95_ms,greater_than,250.0,318.0,confirmed
+bolgesel_artis,regional-ramp,warned,true,,True,confirmed
+cihaz_kopmasi,three-offline,min_n_neighbors,less_than,11.0,8.0,confirmed
+gercek_haze_replay,haze-replay,warned,true,,True,confirmed
+gercek_haze_replay,haze-replay,lead_time_h,greater_than,0.0,22.0,confirmed
+sensor_sicramasi,spike-edge-off,peak_forecast_h6,greater_than,54.001762366269574,87.69303584194215,confirmed
+sensor_sicramasi,spike-edge-off,warned,true,,True,confirmed
+sensor_takilmasi,stuck-edge-off,mae_next_6h_h6,greater_than,12.572935625534717,10.541294988671831,refuted
+yerel_artis,local-ramp,warned,true,,True,confirmed
+yerel_artis,neighbor-huairou,peak_forecast_h6,less_than,101.90904260058223,39.033985820316865,confirmed

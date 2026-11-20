@@ -89,8 +89,16 @@ def _latencies_ms(con: sqlite3.Connection) -> list[float]:
     return out
 
 
-def create_app(db_path: Path | str | None = None, reports_dir: Path | str | None = None) -> FastAPI:
-    app = FastAPI(title="airq-iot API", version="0.1")
+def create_app(
+    db_path: Path | str | None = None,
+    reports_dir: Path | str | None = None,
+    controller=None,
+    truth=None,
+    scenarios_dir: Path | str | None = None,
+) -> FastAPI:
+    """`controller` / `truth` can be injected (tests); by default the control endpoints connect to
+    the broker named by AIRQ_BROKER on first use and read the recorded data lazily."""
+    app = FastAPI(title="airq-iot API", version="0.2")
     paths = {"db": Path(db_path or os.environ.get("AIRQ_DB", "data/airq.db"))}
     paths["reports"] = Path(reports_dir or os.environ.get("AIRQ_REPORTS", "reports"))
 
@@ -268,6 +276,9 @@ def create_app(db_path: Path | str | None = None, reports_dir: Path | str | None
             "edge": json.loads(edge["payload"]) if edge else None,
         }
 
+    from airq.server.control_api import ControlHub, register
+
+    register(app, ControlHub(paths, controller, truth, scenarios_dir), get_con)
     return app
 
 

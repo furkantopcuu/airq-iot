@@ -30,3 +30,4 @@ docs/TALIMAT.md
 
 # raw benchmark work dirs (databases, logs)
 reports/bench/work/
+reports/scenarios/work/

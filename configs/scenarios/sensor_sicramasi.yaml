@@ -1,0 +1,17 @@
+name: sensor_sicramasi
+description: "Dongsi PM2.5 sensöründe 3 saatlik sıçrama (k=8 σ); edge filtresi önce kapalı, sonra açık."
+start: "2016-06-01 00:00"
+warmup_h: 240
+duration_h: 36
+steps:
+  - at_h: 0
+    command: {kind: edge, filter: "off"}
+  - at_h: 0
+    command: {target: Dongsi, variables: [pm25], mode: perturb, params: {type: spike, severity: 8}, duration_h: 3, coupled: false, label: spike-edge-off}
+  - at_h: 14
+    command: {kind: edge, filter: "on"}
+  - at_h: 14
+    command: {target: Dongsi, variables: [pm25], mode: perturb, params: {type: spike, severity: 8}, duration_h: 3, coupled: false, label: spike-edge-on}
+expected:
+  - {label: spike-edge-off, metric: peak_forecast_h6, relation: greater_than, ref: spike-edge-on}
+  - {label: spike-edge-off, metric: warned, relation: "true"}

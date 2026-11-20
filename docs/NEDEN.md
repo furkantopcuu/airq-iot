@@ -220,3 +220,11 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Dashboard'un verileri doğrudan değiştirmesi (IoT katmanını atlar, tahminler gerçek akışı yansıtmaz), HTTP ile cihaza komut (cihazlar zaten MQTT istemcisi, ikinci bir kanal gerekmez), komutları yalnızca bellekte tutmak (denetim izi kalmaz).
 - Projede nerede: `src/airq/iot/schemas.py`, `src/airq/devices/modes.py`, `src/airq/devices/fleet.py`, `src/airq/server/control.py`
 - Sunumda tek cümle: Sensörü, ağı ve edge filtresini canlı bozabiliyoruz; komut MQTT'den cihaza gidiyor, cihaz onaylıyor ve tahminin tepkisini ekranda görüyoruz.
+
+### Hazır senaryolar (YAML), puan tablosu ve komut kaydından referans üretme
+- Ne: Demoda tek tuşla çalışan, zamanlanmış komut listeleri (ör. "sensör 12 saat takılır, edge önce kapalı sonra açık") ve her müdahale için sonucu ölçen bir puan tablosu: uyarı verildi mi, doğru muydu, ne kadar önceden, tahmin ne kadar yanıldı. Her senaryonun yanında bir hipotez yazılı; sonuç hipotezle karşılaştırılıp açıkça "doğrulandı" ya da "çürütüldü" diye raporlanır.
+- Neden: Canlı demoyu anlatıdan çıkarıp ölçülebilir bir deneye çeviriyor; "ne bekliyorduk, ne oldu" yan yana görünür ve sonuç beklentiye uydurulamaz. Yanıt doğruluğunu ölçmek için gerçek değeri bilmek gerekir: sensör hatası senaryolarında gerçek değer temiz kayıt, müdahale dünyayı değiştiriyorsa cihazın yayınladığı değerdir. İkincisini veritabanından okumak yanlış olurdu (edge filtresi yayınlanan değeri silebilir), bu yüzden komut kaydı cihazla aynı kod ile yeniden oynatılıyor.
+- Alternatifler ve neden seçilmedi: Elle tarif edilen senaryolar (tekrarlanamaz, hipotez kayıt altında olmaz), referansı yalnızca veritabanından almak (edge filtresi açıkken gerçek değer görünmez), her senaryo için ayrı kod (YAML ile kullanıcı kendi senaryosunu şema doğrulamasıyla ekleyebilir).
+- Projede nerede: `configs/scenarios/`, `src/airq/scenarios/`, `src/airq/server/scorecard.py`, `src/airq/server/truth.py`, `scripts/run_scenarios.py`
+- Sunumda tek cümle: Her senaryoda önce ne olmasını beklediğimizi yazdık, sonra gerçek sistemde çalıştırıp ölçtük; 11 beklentiden biri çürüdü ve onu da olduğu gibi raporladık.
+

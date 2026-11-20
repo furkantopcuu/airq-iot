@@ -1,0 +1,98 @@
+{
+  "scenario": "bolgesel_artis",
+  "description": "T\u00fcm istasyonlarda PM2.5 6 saatte +200 \u00b5g/m\u00b3 artar (PM10 ba\u011fl\u0131); kom\u015fu \u00f6zellikleri h=6/24 tahminlerini y\u00fckseltir mi, uyar\u0131 \u00e7\u0131kar m\u0131?",
+  "sim_start": "2016-06-01 00:00:00",
+  "sim_zero": "2016-06-11 00:00:00",
+  "sim_end": "2016-06-13 12:00:00",
+  "speedup": 7200.0,
+  "fleet_wall_s": 151.9,
+  "drain_s": 16.0,
+  "steps_fired": 1,
+  "steps_total": 1,
+  "step_log": [
+    {
+      "step": 0,
+      "at_h": 0.0,
+      "label": "regional-ramp",
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "Command",
+      "ok": true,
+      "cmd_id": "631b3009-a1ed-48a7-b6b6-e33c222c11d7",
+      "errors": []
+    }
+  ],
+  "scorecard": [
+    {
+      "label": "regional-ramp",
+      "kind": "world",
+      "mode": "ramp",
+      "edge_filter": "on",
+      "stations": "all",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-12T01:00:00",
+      "n_forecasts": 900,
+      "mae_next_6h_h1": 26.563917128104965,
+      "mae_next_6h_h6": 88.50875255931994,
+      "peak_forecast_h6": 208.483933587468,
+      "min_n_neighbors": 11.0,
+      "warned": true,
+      "matched": true,
+      "lead_time_h": 2.0,
+      "n_onsets": 12,
+      "n_onsets_warned_ahead": 12,
+      "first_onset": "2016-06-11T05:00:00",
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 2.0
+    }
+  ],
+  "expected": [
+    {
+      "label": "regional-ramp",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    }
+  ],
+  "reference": "recorded data replay (server/truth.py)",
+  "evaluated_at": "2026-11-20T11:09:37",
+  "scorecard_v1": [
+    {
+      "label": "regional-ramp",
+      "kind": "world",
+      "mode": "ramp",
+      "edge_filter": "on",
+      "stations": "all",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-12T01:00:00",
+      "n_forecasts": 900,
+      "mae_next_6h_h1": 26.563917128104965,
+      "mae_next_6h_h6": 88.50875255931994,
+      "peak_forecast_h6": 208.483933587468,
+      "min_n_neighbors": 11.0,
+      "warned": true,
+      "matched": true,
+      "lead_time_h": null,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 2.0
+    }
+  ],
+  "expected_v1": [
+    {
+      "label": "regional-ramp",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    }
+  ],
+  "scoring_version": 2,
+  "rescored_at": "2026-11-20T11:31:33"
+}

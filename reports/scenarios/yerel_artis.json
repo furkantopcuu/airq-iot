@@ -1,0 +1,170 @@
+{
+  "scenario": "yerel_artis",
+  "description": "Yaln\u0131zca Dongsi'de PM2.5 6 saatte +150 \u00b5g/m\u00b3 artar (PM10 ba\u011fl\u0131); kom\u015fu Huairou'nun tahmini etkilenmez mi?",
+  "sim_start": "2016-06-01 00:00:00",
+  "sim_zero": "2016-06-11 00:00:00",
+  "sim_end": "2016-06-13 12:00:00",
+  "speedup": 7200.0,
+  "fleet_wall_s": 151.8,
+  "drain_s": 16.0,
+  "steps_fired": 2,
+  "steps_total": 2,
+  "step_log": [
+    {
+      "step": 0,
+      "at_h": 0.0,
+      "label": "local-ramp",
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "Command",
+      "ok": true,
+      "cmd_id": "67fea783-612a-4990-8461-72cd80dab903",
+      "errors": []
+    },
+    {
+      "step": 1,
+      "at_h": 0.0,
+      "label": "neighbor-huairou",
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "Mark",
+      "ok": true,
+      "cmd_id": null,
+      "errors": []
+    }
+  ],
+  "scorecard": [
+    {
+      "label": "local-ramp",
+      "kind": "world",
+      "mode": "ramp",
+      "edge_filter": "on",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-12T01:00:00",
+      "n_forecasts": 75,
+      "mae_next_6h_h1": 43.558124578313,
+      "mae_next_6h_h6": 114.60159171249909,
+      "peak_forecast_h6": 101.90904260058223,
+      "min_n_neighbors": 11.0,
+      "warned": true,
+      "matched": true,
+      "lead_time_h": 0.0,
+      "n_onsets": 1,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": "2016-06-11T06:00:00",
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 1.0
+    },
+    {
+      "label": "neighbor-huairou",
+      "kind": "mark",
+      "mode": "mark",
+      "edge_filter": "on",
+      "stations": "Huairou",
+      "t0": "2016-06-11T00:00:00",
+      "t1": "2016-06-12T00:00:00",
+      "n_forecasts": 75,
+      "mae_next_6h_h1": 2.9533786442043755,
+      "mae_next_6h_h6": 14.222935733181968,
+      "peak_forecast_h6": 39.033985820316865,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "n_onsets": 0,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": null,
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 2.0
+    }
+  ],
+  "expected": [
+    {
+      "label": "local-ramp",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "neighbor-huairou",
+      "metric": "peak_forecast_h6",
+      "relation": "less_than",
+      "ref": "local-ramp",
+      "value": null,
+      "measured": 39.033985820316865,
+      "reference": 101.90904260058223,
+      "verdict": "confirmed"
+    }
+  ],
+  "reference": "recorded data replay (server/truth.py)",
+  "evaluated_at": "2026-11-20T11:28:09",
+  "scorecard_v1": [
+    {
+      "label": "local-ramp",
+      "kind": "world",
+      "mode": "ramp",
+      "edge_filter": "on",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-12T01:00:00",
+      "n_forecasts": 75,
+      "mae_next_6h_h1": 43.558124578313,
+      "mae_next_6h_h6": 114.60159171249909,
+      "peak_forecast_h6": 101.90904260058223,
+      "min_n_neighbors": 11.0,
+      "warned": true,
+      "matched": true,
+      "lead_time_h": null,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 1.0
+    },
+    {
+      "label": "neighbor-huairou",
+      "kind": "mark",
+      "mode": "mark",
+      "edge_filter": "on",
+      "stations": "Huairou",
+      "t0": "2016-06-11T00:00:00",
+      "t1": "2016-06-12T00:00:00",
+      "n_forecasts": 75,
+      "mae_next_6h_h1": 2.9533786442043755,
+      "mae_next_6h_h6": 14.222935733181968,
+      "peak_forecast_h6": 39.033985820316865,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 2.0
+    }
+  ],
+  "expected_v1": [
+    {
+      "label": "local-ramp",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "neighbor-huairou",
+      "metric": "peak_forecast_h6",
+      "relation": "less_than",
+      "ref": "local-ramp",
+      "value": null,
+      "measured": 39.033985820316865,
+      "reference": 101.90904260058223,
+      "verdict": "confirmed"
+    }
+  ],
+  "scoring_version": 2,
+  "rescored_at": "2026-11-20T11:31:33"
+}

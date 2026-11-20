@@ -30,6 +30,17 @@ class ApiClient:
             raise ApiError(f"{path}: {resp.status_code} {detail}")
         return resp.json()
 
+    def post(self, path: str, body: dict | None = None) -> Any:
+        """POST JSON (Senaryo Kontrol). Refusals (422 / 504 ...) raise ApiError with the reason."""
+        try:
+            resp = self._http.post(f"{self.base_url}{path}", json=body or {})
+        except httpx.HTTPError as exc:
+            raise ApiError(f"API'ye ulaşılamıyor ({self.base_url}): {exc}") from exc
+        if resp.status_code >= 400:
+            detail = resp.json().get("detail", resp.text) if resp.content else resp.status_code
+            raise ApiError(f"{path}: {resp.status_code} {detail}")
+        return resp.json()
+
     def url(self, path: str) -> str:
         """Absolute URL (e.g. for st.image of /figures/<name>)."""
         return f"{self.base_url}{path}"

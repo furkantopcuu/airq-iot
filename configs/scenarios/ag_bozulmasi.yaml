@@ -1,0 +1,15 @@
+name: ag_bozulmasi
+description: "24 saat boyunca %15 mesaj kaybı ve 300 ms gecikme; teslim oranı düşer, gecikme artar, tahmin sürer."
+start: "2016-06-01 00:00"
+warmup_h: 240
+duration_h: 36
+steps:
+  - at_h: 0
+    command: {kind: network, target: all, loss_rate: 0.15, delay_ms: 300}
+  - at_h: 0
+    command: {kind: mark, label: net-degraded, duration_h: 24}
+  - at_h: 24
+    command: {kind: network, target: all, reset: true}
+expected:
+  - {label: net-degraded, metric: delivery_ratio, relation: less_than, value: 0.95}
+  - {label: net-degraded, metric: latency_p95_ms, relation: greater_than, value: 250}

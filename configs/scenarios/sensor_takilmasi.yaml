@@ -1,0 +1,16 @@
+name: sensor_takilmasi
+description: "Dongsi PM2.5 sensörü 12 saat takılı kalır; edge filtresi önce kapalı, sonra açık."
+start: "2016-06-01 00:00"
+warmup_h: 240
+duration_h: 36
+steps:
+  - at_h: 0
+    command: {kind: edge, filter: "off"}
+  - at_h: 0
+    command: {target: Dongsi, variables: [pm25], mode: perturb, params: {type: stuck}, duration_h: 12, coupled: false, label: stuck-edge-off}
+  - at_h: 14
+    command: {kind: edge, filter: "on"}
+  - at_h: 14
+    command: {target: Dongsi, variables: [pm25], mode: perturb, params: {type: stuck}, duration_h: 12, coupled: false, label: stuck-edge-on}
+expected:
+  - {label: stuck-edge-off, metric: mae_next_6h_h6, relation: greater_than, ref: stuck-edge-on}

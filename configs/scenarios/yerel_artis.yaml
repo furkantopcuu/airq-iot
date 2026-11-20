@@ -1,0 +1,13 @@
+name: yerel_artis
+description: "Yalnızca Dongsi'de PM2.5 6 saatte +150 µg/m³ artar (PM10 bağlı); komşu Huairou'nun tahmini etkilenmez mi?"
+start: "2016-06-01 00:00"
+warmup_h: 240
+duration_h: 36
+steps:
+  - at_h: 0
+    command: {target: Dongsi, variables: [pm25], mode: ramp, params: {delta: 150}, duration_h: 6, coupled: true, label: local-ramp}
+  - at_h: 0
+    command: {kind: mark, target: Huairou, label: neighbor-huairou, duration_h: 24}
+expected:
+  - {label: local-ramp, metric: warned, relation: "true"}
+  - {label: neighbor-huairou, metric: peak_forecast_h6, relation: less_than, ref: local-ramp}

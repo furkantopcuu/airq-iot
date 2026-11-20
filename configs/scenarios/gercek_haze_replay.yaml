@@ -1,0 +1,12 @@
+name: gercek_haze_replay
+description: "Test döneminin en büyük bölgesel haze epizodunu (onset 2017-01-04 15:00) hiç müdahale etmeden oynat; tahminler yükselişi önceden gösterir mi?"
+# start = onset - 48 h - 240 h warm-up; same window as the RQ3a benchmark (pipelines/rq3a.window).
+start: "2016-12-23 16:00"
+warmup_h: 240
+duration_h: 96
+steps:
+  - at_h: 0
+    command: {kind: mark, label: haze-replay, duration_h: 96}
+expected:
+  - {label: haze-replay, metric: warned, relation: "true"}
+  - {label: haze-replay, metric: lead_time_h, relation: greater_than, value: 0}

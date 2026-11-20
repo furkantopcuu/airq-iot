@@ -1,0 +1,118 @@
+{
+  "scenario": "gercek_haze_replay",
+  "description": "Test d\u00f6neminin en b\u00fcy\u00fck b\u00f6lgesel haze epizodunu (onset 2017-01-04 15:00) hi\u00e7 m\u00fcdahale etmeden oynat; tahminler y\u00fckseli\u015fi \u00f6nceden g\u00f6sterir mi?",
+  "sim_start": "2016-12-23 16:00:00",
+  "sim_zero": "2017-01-02 16:00:00",
+  "sim_end": "2017-01-07 16:00:00",
+  "speedup": 7200.0,
+  "fleet_wall_s": 181.8,
+  "drain_s": 30.0,
+  "steps_fired": 1,
+  "steps_total": 1,
+  "step_log": [
+    {
+      "step": 0,
+      "at_h": 0.0,
+      "label": "haze-replay",
+      "sim_ts": "2017-01-02T16:00:00",
+      "kind": "Mark",
+      "ok": true,
+      "cmd_id": null,
+      "errors": []
+    }
+  ],
+  "scorecard": [
+    {
+      "label": "haze-replay",
+      "kind": "mark",
+      "mode": "mark",
+      "edge_filter": "on",
+      "stations": "all",
+      "t0": "2017-01-02T16:00:00",
+      "t1": "2017-01-06T16:00:00",
+      "n_forecasts": 3492,
+      "mae_next_6h_h1": 23.380153953027364,
+      "mae_next_6h_h6": 80.08812864407982,
+      "peak_forecast_h6": 342.99599058023307,
+      "min_n_neighbors": 10.0,
+      "warned": true,
+      "matched": true,
+      "lead_time_h": 22.0,
+      "n_onsets": 13,
+      "n_onsets_warned_ahead": 11,
+      "first_onset": "2017-01-02T16:00:00",
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 4.0
+    }
+  ],
+  "expected": [
+    {
+      "label": "haze-replay",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "haze-replay",
+      "metric": "lead_time_h",
+      "relation": "greater_than",
+      "ref": null,
+      "value": 0.0,
+      "measured": 22.0,
+      "reference": 0.0,
+      "verdict": "confirmed"
+    }
+  ],
+  "reference": "recorded data replay (server/truth.py)",
+  "evaluated_at": "2026-11-20T11:19:24",
+  "scorecard_v1": [
+    {
+      "label": "haze-replay",
+      "kind": "mark",
+      "mode": "mark",
+      "edge_filter": "on",
+      "stations": "all",
+      "t0": "2017-01-02T16:00:00",
+      "t1": "2017-01-06T16:00:00",
+      "n_forecasts": 3492,
+      "mae_next_6h_h1": 23.380153953027364,
+      "mae_next_6h_h6": 80.08812864407982,
+      "peak_forecast_h6": 342.99599058023307,
+      "min_n_neighbors": 10.0,
+      "warned": true,
+      "matched": true,
+      "lead_time_h": 1.0,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 4.0
+    }
+  ],
+  "expected_v1": [
+    {
+      "label": "haze-replay",
+      "metric": "warned",
+      "relation": "true",
+      "ref": null,
+      "value": null,
+      "measured": true,
+      "reference": null,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "haze-replay",
+      "metric": "lead_time_h",
+      "relation": "greater_than",
+      "ref": null,
+      "value": 0.0,
+      "measured": 1.0,
+      "reference": 0.0,
+      "verdict": "confirmed"
+    }
+  ],
+  "scoring_version": 2,
+  "rescored_at": "2026-11-20T11:31:33"
+}

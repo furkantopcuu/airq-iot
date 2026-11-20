@@ -1,0 +1,170 @@
+{
+  "scenario": "sensor_takilmasi",
+  "description": "Dongsi PM2.5 sens\u00f6r\u00fc 12 saat tak\u0131l\u0131 kal\u0131r; edge filtresi \u00f6nce kapal\u0131, sonra a\u00e7\u0131k.",
+  "sim_start": "2016-06-01 00:00:00",
+  "sim_zero": "2016-06-11 00:00:00",
+  "sim_end": "2016-06-13 12:00:00",
+  "speedup": 7200.0,
+  "fleet_wall_s": 151.8,
+  "drain_s": 16.0,
+  "steps_fired": 4,
+  "steps_total": 4,
+  "step_log": [
+    {
+      "step": 0,
+      "at_h": 0.0,
+      "label": null,
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "EdgeControl",
+      "ok": true,
+      "cmd_id": "e388701b-868d-4288-930f-4641fe8efcde",
+      "errors": []
+    },
+    {
+      "step": 1,
+      "at_h": 0.0,
+      "label": "stuck-edge-off",
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "Command",
+      "ok": true,
+      "cmd_id": "9ea71747-f830-4f1a-99c9-b07298ab6f92",
+      "errors": []
+    },
+    {
+      "step": 2,
+      "at_h": 14.0,
+      "label": null,
+      "sim_ts": "2016-06-11T14:00:00",
+      "kind": "EdgeControl",
+      "ok": true,
+      "cmd_id": "c569a502-1679-4ced-a329-fbf1ef00d2b1",
+      "errors": []
+    },
+    {
+      "step": 3,
+      "at_h": 14.0,
+      "label": "stuck-edge-on",
+      "sim_ts": "2016-06-11T14:00:00",
+      "kind": "Command",
+      "ok": true,
+      "cmd_id": "01d5a588-ff9f-4b33-9a6d-f57df2574e20",
+      "errors": []
+    }
+  ],
+  "scorecard": [
+    {
+      "label": "stuck-edge-off",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "off",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-11T13:00:00",
+      "n_forecasts": 39,
+      "mae_next_6h_h1": 2.9540306122137614,
+      "mae_next_6h_h6": 10.541294988671831,
+      "peak_forecast_h6": 28.766972203126695,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "n_onsets": 0,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": null,
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 4.399999999999999
+    },
+    {
+      "label": "stuck-edge-on",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "on",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T15:00:00",
+      "t1": "2016-06-12T03:00:00",
+      "n_forecasts": 39,
+      "mae_next_6h_h1": 3.9488914921933556,
+      "mae_next_6h_h6": 12.572935625534717,
+      "peak_forecast_h6": 74.20625781610181,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "n_onsets": 0,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": null,
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 3.1999999999999957
+    }
+  ],
+  "expected": [
+    {
+      "label": "stuck-edge-off",
+      "metric": "mae_next_6h_h6",
+      "relation": "greater_than",
+      "ref": "stuck-edge-on",
+      "value": null,
+      "measured": 10.541294988671831,
+      "reference": 12.572935625534717,
+      "verdict": "refuted"
+    }
+  ],
+  "reference": "recorded data replay (server/truth.py)",
+  "evaluated_at": "2026-11-20T11:25:15",
+  "scorecard_v1": [
+    {
+      "label": "stuck-edge-off",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "off",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T01:00:00",
+      "t1": "2016-06-11T13:00:00",
+      "n_forecasts": 39,
+      "mae_next_6h_h1": 2.9540306122137614,
+      "mae_next_6h_h6": 10.541294988671831,
+      "peak_forecast_h6": 28.766972203126695,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 4.399999999999999
+    },
+    {
+      "label": "stuck-edge-on",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "on",
+      "stations": "Dongsi",
+      "t0": "2016-06-11T15:00:00",
+      "t1": "2016-06-12T03:00:00",
+      "n_forecasts": 39,
+      "mae_next_6h_h1": 3.9488914921933556,
+      "mae_next_6h_h6": 12.572935625534717,
+      "peak_forecast_h6": 74.20625781610181,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 3.1999999999999957
+    }
+  ],
+  "expected_v1": [
+    {
+      "label": "stuck-edge-off",
+      "metric": "mae_next_6h_h6",
+      "relation": "greater_than",
+      "ref": "stuck-edge-on",
+      "value": null,
+      "measured": 10.541294988671831,
+      "reference": 12.572935625534717,
+      "verdict": "refuted"
+    }
+  ],
+  "scoring_version": 2,
+  "rescored_at": "2026-11-20T11:31:33"
+}

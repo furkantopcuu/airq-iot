@@ -1,0 +1,138 @@
+{
+  "scenario": "ag_bozulmasi",
+  "description": "24 saat boyunca %15 mesaj kayb\u0131 ve 300 ms gecikme; teslim oran\u0131 d\u00fc\u015fer, gecikme artar, tahmin s\u00fcrer.",
+  "sim_start": "2016-06-01 00:00:00",
+  "sim_zero": "2016-06-11 00:00:00",
+  "sim_end": "2016-06-13 12:00:00",
+  "speedup": 7200.0,
+  "fleet_wall_s": 151.8,
+  "drain_s": 16.0,
+  "steps_fired": 3,
+  "steps_total": 3,
+  "step_log": [
+    {
+      "step": 0,
+      "at_h": 0.0,
+      "label": null,
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "NetControl",
+      "ok": true,
+      "cmd_id": "1ca123f5-9018-41a6-9e8a-7c0bc9ee6a53",
+      "errors": []
+    },
+    {
+      "step": 1,
+      "at_h": 0.0,
+      "label": "net-degraded",
+      "sim_ts": "2016-06-11T00:00:00",
+      "kind": "Mark",
+      "ok": true,
+      "cmd_id": null,
+      "errors": []
+    },
+    {
+      "step": 2,
+      "at_h": 24.0,
+      "label": null,
+      "sim_ts": "2016-06-12T00:00:00",
+      "kind": "NetControl",
+      "ok": true,
+      "cmd_id": "bd03b89c-940c-412b-94cd-d375e03cce0c",
+      "errors": []
+    }
+  ],
+  "scorecard": [
+    {
+      "label": "net-degraded",
+      "kind": "mark",
+      "mode": "mark",
+      "edge_filter": "on",
+      "stations": "all",
+      "t0": "2016-06-11T00:00:00",
+      "t1": "2016-06-12T00:00:00",
+      "n_forecasts": 900,
+      "mae_next_6h_h1": 3.4691382980937444,
+      "mae_next_6h_h6": 9.312054181254663,
+      "peak_forecast_h6": 49.56859824785591,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "n_onsets": 0,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": null,
+      "scoring_version": 2,
+      "delivery_ratio": 0.8821548821548821,
+      "latency_p95_ms": 318.0
+    }
+  ],
+  "expected": [
+    {
+      "label": "net-degraded",
+      "metric": "delivery_ratio",
+      "relation": "less_than",
+      "ref": null,
+      "value": 0.95,
+      "measured": 0.8821548821548821,
+      "reference": 0.95,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "net-degraded",
+      "metric": "latency_p95_ms",
+      "relation": "greater_than",
+      "ref": null,
+      "value": 250.0,
+      "measured": 318.0,
+      "reference": 250.0,
+      "verdict": "confirmed"
+    }
+  ],
+  "reference": "recorded data replay (server/truth.py)",
+  "evaluated_at": "2026-11-20T11:12:51",
+  "scorecard_v1": [
+    {
+      "label": "net-degraded",
+      "kind": "mark",
+      "mode": "mark",
+      "edge_filter": "on",
+      "stations": "all",
+      "t0": "2016-06-11T00:00:00",
+      "t1": "2016-06-12T00:00:00",
+      "n_forecasts": 900,
+      "mae_next_6h_h1": 3.4691382980937444,
+      "mae_next_6h_h6": 9.312054181254663,
+      "peak_forecast_h6": 49.56859824785591,
+      "min_n_neighbors": 11.0,
+      "warned": false,
+      "matched": false,
+      "lead_time_h": null,
+      "delivery_ratio": 0.8821548821548821,
+      "latency_p95_ms": 318.0
+    }
+  ],
+  "expected_v1": [
+    {
+      "label": "net-degraded",
+      "metric": "delivery_ratio",
+      "relation": "less_than",
+      "ref": null,
+      "value": 0.95,
+      "measured": 0.8821548821548821,
+      "reference": 0.95,
+      "verdict": "confirmed"
+    },
+    {
+      "label": "net-degraded",
+      "metric": "latency_p95_ms",
+      "relation": "greater_than",
+      "ref": null,
+      "value": 250.0,
+      "measured": 318.0,
+      "reference": 250.0,
+      "verdict": "confirmed"
+    }
+  ],
+  "scoring_version": 2,
+  "rescored_at": "2026-11-20T11:31:33"
+}
