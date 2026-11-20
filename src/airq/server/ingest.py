@@ -9,14 +9,23 @@ import argparse
 import json
 import queue
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from airq.iot import topics
 from airq.iot.mqtt_client import connect_blocking, disconnect, make_client
-from airq.iot.schemas import MEASUREMENTS, Telemetry
+from airq.iot.schemas import (
+    MEASUREMENTS,
+    Ack,
+    Command,
+    EdgeControl,
+    FleetControl,
+    NetControl,
+    Telemetry,
+    parse_command,
+)
 from airq.server import db
 
 _STOP = object()
@@ -56,6 +65,10 @@ class Ingest:
             self.q.put(("status", (station, msg.payload.decode("utf-8", "replace")), now))
         elif msg.topic == topics.topic(topics.EDGE_STATS):
             self.q.put(("edge_stats", msg.payload.decode("utf-8", "replace"), now))
+        elif msg.topic.startswith("airq/cmd/ack/"):
+            self.q.put(("ack", msg.payload, now))
+        elif msg.topic.startswith("airq/cmd/"):
+            self.q.put(("cmd", msg.payload, now))
 
     def start(self, host: str, port: int) -> None:
         self._thread.start()
@@ -67,6 +80,8 @@ class Ingest:
                 (topics.EDGE_ALL, topics.EDGE_TELEMETRY.qos),
                 (topics.STATUS_ALL, topics.STATUS.qos),
                 (topics.topic(topics.EDGE_STATS), topics.EDGE_STATS.qos),
+                ("airq/cmd/+", topics.CMD_STATION.qos),  # station, fleet, net, edge commands
+                (topics.CMD_ACK_ALL, topics.CMD_ACK.qos),
             ]
         )
 
@@ -108,6 +123,10 @@ class Ingest:
                         db.set_device_status(con, payload[0], payload[1], now.isoformat())
                     elif kind == "edge_stats":
                         db.add_event(con, now.isoformat(), "edge_stats", payload)
+                    elif kind == "cmd":
+                        self._write_command(con, payload)
+                    elif kind == "ack":
+                        self._write_ack(con, payload)
                 con.commit()
                 for ev in flushes:
                     ev.set()
@@ -115,6 +134,61 @@ class Ingest:
                     return
         finally:
             con.close()
+
+    def _write_command(self, con, payload: bytes) -> None:
+        """Log every command in `interventions` (spec 9.3). Unparseable payloads are ignored."""
+        try:
+            cmd = parse_command(payload)
+        except ValueError:
+            return
+        if isinstance(cmd, Command):
+            extra = {"duration_h": cmd.duration_h, "coupled": cmd.coupled,
+                     "allow_invalid": cmd.allow_invalid}  # fmt: skip
+            row = (cmd.target, cmd.variables, cmd.mode, {**cmd.params, **extra})
+        elif isinstance(cmd, FleetControl):
+            row = ("fleet", [], cmd.action, {"value": cmd.value})
+        elif isinstance(cmd, NetControl):
+            keys = {"loss_rate", "delay_ms", "jitter_ms", "reorder_rate", "reset"}
+            row = (cmd.target, [], "net", cmd.model_dump(include=keys))
+        else:
+            assert isinstance(cmd, EdgeControl)
+            row = ("edge", [], "filter", {"filter": cmd.filter})
+        station, variables, mode, params = row
+        db.record_command(
+            con, cmd.cmd_id, station, json.dumps(variables), mode, json.dumps(params), cmd.label
+        )
+
+    def _write_ack(self, con, payload: bytes) -> None:
+        try:
+            ack = Ack.from_json(payload)
+        except ValidationError:
+            return
+        applied = None if ack.applied_at_ts is None else ack.applied_at_ts.isoformat()
+        db.record_ack(con, ack.cmd_id, ack.ok, ack.error, applied)
+        self._set_end_ts(con, ack.cmd_id)
+
+    @staticmethod
+    def _set_end_ts(con, cmd_id: str) -> None:
+        """end_ts = start_ts + duration (+ hold for a ramp); stays NULL for open-ended ones."""
+        row = con.execute(
+            "SELECT start_ts, params, end_ts, mode FROM interventions WHERE cmd_id=?", (cmd_id,)
+        ).fetchone()
+        if row is None or row["start_ts"] is None or row["end_ts"] is not None:
+            return
+        try:
+            params = json.loads(row["params"] or "{}")
+        except json.JSONDecodeError:
+            return
+        dur = params.get("duration_h")
+        if dur is None:
+            return
+        hours = dur
+        if row["mode"] == "ramp":  # a ramp holds its value until reset unless hold_h is given
+            if params.get("hold_h") is None:
+                return
+            hours = dur + params["hold_h"]
+        end = datetime.fromisoformat(row["start_ts"]) + timedelta(hours=hours)
+        con.execute("UPDATE interventions SET end_ts=? WHERE cmd_id=?", (end.isoformat(), cmd_id))
 
     def _write_telemetry(self, con, payload: bytes, now: datetime) -> None:
         self.stats["received"] += 1

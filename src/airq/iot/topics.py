@@ -21,13 +21,16 @@ EDGE_STATS = TopicSpec("airq/edge/stats", 0, False)
 CMD_STATION = TopicSpec("airq/cmd/{station}", 1, False)
 CMD_FLEET = TopicSpec("airq/cmd/fleet", 1, False)
 CMD_NET = TopicSpec("airq/cmd/net", 1, False)
-CMD_ACK = TopicSpec("airq/cmd/ack/{station}", 1, False)
+CMD_EDGE = TopicSpec("airq/cmd/edge", 1, False)  # edge filter on/off (added to spec 3.2)
+CMD_ACK = TopicSpec("airq/cmd/ack/{station}", 1, False)  # {station}: station | fleet | net | edge
 
 # Wildcard subscriptions
 RAW_ALL = "airq/raw/+/telemetry"
 EDGE_ALL = "airq/edge/+/telemetry"
 STATUS_ALL = "airq/+/status"
 HEARTBEAT_ALL = "airq/+/heartbeat"
+CMD_ACK_ALL = "airq/cmd/ack/+"
+CMD_CONTROL = ["airq/cmd/fleet", "airq/cmd/net", "airq/cmd/edge"]  # plus airq/cmd/{station}
 
 ONLINE = "online"
 OFFLINE = "offline"

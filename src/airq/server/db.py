@@ -107,3 +107,29 @@ def upsert_warning(con: sqlite3.Connection, row: dict) -> None:
         f"INSERT OR REPLACE INTO warnings({cols}) VALUES ({marks})",
         [row.get(c) for c in WARNING_COLUMNS],
     )
+
+
+def record_command(
+    con: sqlite3.Connection, cmd_id: str, station: str, variables: str, mode: str, params: str,
+    label: str | None,
+) -> None:  # fmt: skip
+    """Log an issued command (idempotent). Keeps the ack data if the ack arrived first."""
+    con.execute(
+        "INSERT INTO interventions(cmd_id, station, variables, mode, params, label, acked) "
+        "VALUES (?, ?, ?, ?, ?, ?, 0) ON CONFLICT(cmd_id) DO UPDATE SET station=excluded.station, "
+        "variables=excluded.variables, mode=excluded.mode, params=excluded.params, "
+        "label=excluded.label",
+        (cmd_id, station, variables, mode, params, label),
+    )
+
+
+def record_ack(
+    con: sqlite3.Connection, cmd_id: str, ok: bool, error: str | None, applied_at_ts: str | None
+) -> None:
+    """Count a device's answer: `acked` = number of ok acks, `error` = first error text."""
+    con.execute("INSERT OR IGNORE INTO interventions(cmd_id, acked) VALUES (?, 0)", (cmd_id,))
+    con.execute(
+        "UPDATE interventions SET acked = COALESCE(acked, 0) + ?, error = COALESCE(error, ?), "
+        "start_ts = COALESCE(start_ts, ?) WHERE cmd_id = ?",
+        (1 if ok else 0, None if ok else error, applied_at_ts if ok else None, cmd_id),
+    )

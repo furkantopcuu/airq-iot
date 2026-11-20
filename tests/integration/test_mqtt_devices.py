@@ -64,8 +64,10 @@ def test_qos1_publish_subscribe_round_trip(broker):
     connect_blocking(pub, *broker)
     info = pub.publish("airq/test/x", "hello", qos=1)
     info.wait_for_publish(timeout=5)
-    assert _wait(lambda: got)
-    assert got[0][0] == "airq/test/x" and got[0][1] == b"hello"
+    # amqtt may also hand over retained messages of other topics: look at our own topic only
+    assert _wait(lambda: any(t == "airq/test/x" for t, _, _ in got))
+    mine = [p for t, p, _ in got if t == "airq/test/x"]
+    assert mine[0] == b"hello"
     disconnect(pub)
     disconnect(sub)
 
@@ -195,8 +197,10 @@ def test_netem_loss_drops_messages_but_keeps_seq_so_the_gap_is_visible(broker):
     expected = summary["messages"] - summary["dropped"]
 
     def unique() -> set[tuple[str, int]]:
-        # QoS 1 is at-least-once: a broker may redeliver, so count distinct (station, seq) pairs
-        return {(m.station, m.seq) for m in (Telemetry.from_json(p) for _, p, _ in list(got))}
+        # QoS 1 is at-least-once (a broker may redeliver): count distinct (station, seq) pairs.
+        # amqtt also hands retained `status` messages to wildcard subscribers: keep raw topics only.
+        raw = [p for t, p, _ in list(got) if t.startswith("airq/raw/")]
+        return {(m.station, m.seq) for m in map(Telemetry.from_json, raw)}
 
     assert _wait(lambda: len(unique()) == expected)
     seen = unique()

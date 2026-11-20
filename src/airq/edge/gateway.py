@@ -24,7 +24,7 @@ from airq.edge.quality import (
 )
 from airq.iot import topics
 from airq.iot.mqtt_client import connect_blocking, disconnect, make_client
-from airq.iot.schemas import Telemetry
+from airq.iot.schemas import Ack, EdgeControl, Telemetry, parse_command
 
 log = logging.getLogger("airq.edge")
 SEQ_GAP = "seq_gap"
@@ -113,6 +113,17 @@ class EdgeGateway:
             c.forwarded += 1
             return topics.topic(topics.EDGE_TELEMETRY, msg.station), msg.to_json()
 
+    def handle_control(self, payload: bytes | str) -> Ack | None:
+        """`airq/cmd/edge`: switch the validation filter on or off (Senaryo Kontrol, RQ3b live)."""
+        try:
+            cmd = parse_command(payload)
+        except ValueError:
+            return None
+        if not isinstance(cmd, EdgeControl):
+            return None
+        self.set_filter(cmd.filter == "on")
+        return Ack(cmd_id=cmd.cmd_id, source="edge", ok=True)
+
     def stats(self) -> dict:
         with self._lock:
             return {**self.counters.as_dict(), "filter_on": self.filter_on}
@@ -131,14 +142,21 @@ def run(
     gw = EdgeGateway(params, filter_on)
     client = make_client("edge-gateway")
 
+    cmd_topic = topics.topic(topics.CMD_EDGE)
+
     def on_message(c, _u, msg):
+        if msg.topic == cmd_topic:
+            ack = gw.handle_control(msg.payload)
+            if ack is not None:
+                c.publish(topics.topic(topics.CMD_ACK, "edge"), ack.to_json(), qos=1)
+            return
         out = gw.process(msg.payload)
         if out is not None:
             c.publish(out[0], out[1], qos=topics.EDGE_TELEMETRY.qos)
 
     client.on_message = on_message
     connect_blocking(client, host, port)
-    client.subscribe(topics.RAW_ALL, qos=topics.RAW_TELEMETRY.qos)
+    client.subscribe([(topics.RAW_ALL, topics.RAW_TELEMETRY.qos), (cmd_topic, topics.CMD_EDGE.qos)])
     try:
         while not stop.wait(stats_every_s):
             client.publish(topics.topic(topics.EDGE_STATS), json.dumps(gw.stats()), qos=0)

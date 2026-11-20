@@ -2,14 +2,24 @@
 
 from __future__ import annotations
 
+import json
 import math
 from datetime import datetime
 
 import pandas as pd
 
+from airq.devices.modes import HOUR, InterventionSet
 from airq.iot import topics
 from airq.iot.mqtt_client import connect_blocking, disconnect, make_client
-from airq.iot.schemas import MEASUREMENTS, Heartbeat, Telemetry
+from airq.iot.schemas import (
+    ALL_TARGET,
+    MEASUREMENTS,
+    Ack,
+    Command,
+    Heartbeat,
+    Telemetry,
+    parse_command,
+)
 
 
 def _clean(v):
@@ -30,6 +40,8 @@ class VirtualSensor:
         port: int,
         netem=None,
         runner=None,
+        coupled_ratio: float = 1.0,
+        sigma: dict[str, float] | None = None,
     ):
         self.station = station
         self.netem, self.runner = netem, runner  # optional network emulation (devices/netem.py)
@@ -41,6 +53,9 @@ class VirtualSensor:
         self.seq = 0  # monotonically increasing per device
         self.client = None
         self._last_info = None
+        self.iv = InterventionSet(coupled_ratio, sigma)  # Senaryo Kontrol interventions (9.2)
+        self.current_ts: pd.Timestamp | None = None  # simulated time of the last tick
+        self.offline_by_command = False
 
     # --- lifecycle -------------------------------------------------------------------------
     def connect(self) -> None:
@@ -48,7 +63,14 @@ class VirtualSensor:
         self.client = make_client(
             self.device_id, lwt=(status, topics.OFFLINE, topics.STATUS.qos, topics.STATUS.retained)
         )
+        self.client.on_message = self._on_message
         connect_blocking(self.client, self.host, self.port)
+        self.client.subscribe(
+            [
+                (topics.topic(topics.CMD_STATION, self.station), topics.CMD_STATION.qos),
+                (topics.topic(topics.CMD_FLEET), topics.CMD_FLEET.qos),
+            ]
+        )
         self._publish(topics.STATUS, topics.ONLINE)
 
     def close(self) -> None:
@@ -72,6 +94,7 @@ class VirtualSensor:
         row = self.readings.loc[ts] if ts in self.readings.index else None
         # a missing row or column is "no data" -> null, never an error
         values = {m: (_clean(row.get(m)) if row is not None else None) for m in MEASUREMENTS}
+        values = self.iv.apply(ts, values)  # active interventions (replay = no change)
         wd = _clean(row.get("wd")) if row is not None else None
         msg = Telemetry(
             device_id=self.device_id,
@@ -84,6 +107,17 @@ class VirtualSensor:
         )
         self.seq += 1
         return msg
+
+    def tick(self, ts: datetime) -> Telemetry | None:
+        """One simulated hour: honours `offline` interventions (announce, publish nothing, come
+        back online afterwards), otherwise publishes the (possibly intervened) reading."""
+        ts = pd.Timestamp(ts)
+        self.current_ts = ts
+        down = self.iv.is_offline(ts)
+        if down != self.offline_by_command and self.client is not None:
+            self._publish(topics.STATUS, topics.OFFLINE if down else topics.ONLINE)
+        self.offline_by_command = down
+        return None if down else self.publish_reading(ts)
 
     def publish_reading(self, ts: datetime) -> Telemetry:
         """Publish one reading. `sent_at` is stamped at creation, so emulated delay shows up in
@@ -109,3 +143,46 @@ class VirtualSensor:
             sent_at=datetime.now(),
         )
         self._publish(topics.HEARTBEAT, hb.to_json())
+
+    # --- command channel (spec 9.3) --------------------------------------------------------
+    def reset(self) -> None:
+        """Drop every intervention (fleet `reset`); the next tick replays recorded data."""
+        self.iv.reset()
+
+    def handle_command(self, payload: bytes | str) -> Ack | None:
+        """Apply a device command and return its ack; None when it is not for this device."""
+        try:
+            cmd = parse_command(payload)
+        except ValueError as exc:
+            cmd_id = _cmd_id(payload)
+            if cmd_id is None:
+                return None  # cannot even be answered
+            return Ack(cmd_id=cmd_id, source=self.station, ok=False, error=_first_line(exc))
+        if not isinstance(cmd, Command) or cmd.target not in (self.station, ALL_TARGET):
+            return None  # fleet / net / edge messages belong to other components
+        error = self.iv.add(cmd)
+        nxt = None if self.current_ts is None else (self.current_ts + HOUR).to_pydatetime()
+        return Ack(
+            cmd_id=cmd.cmd_id, source=self.station, ok=error is None, error=error,
+            applied_at_ts=nxt if error is None else None,
+        )  # fmt: skip
+
+    def _on_message(self, client, _userdata, msg) -> None:
+        ack = self.handle_command(msg.payload)
+        if ack is not None:
+            client.publish(
+                topics.topic(topics.CMD_ACK, self.station), ack.to_json(), qos=topics.CMD_ACK.qos
+            )
+
+
+def _cmd_id(payload: bytes | str) -> str | None:
+    try:
+        d = json.loads(payload)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    return str(d["cmd_id"]) if isinstance(d, dict) and "cmd_id" in d else None
+
+
+def _first_line(exc: Exception) -> str:
+    lines = [ln.strip() for ln in str(exc).splitlines() if ln.strip()]
+    return " ".join(lines[1:3]) if len(lines) > 2 else (lines[0] if lines else repr(exc))

@@ -213,3 +213,10 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: İşletim sistemi düzeyi `tc netem` (Windows'ta yok; kayıpta TCP kuyruk gecikmesini gösterirdi, bu bizim sınırlamamız), tek süreçte iş parçacıkları (GIL gecikmeyi bozar), paylaşılan broker (koşular birbirini etkiler).
 - Projede nerede: `src/airq/devices/netem.py`, `src/airq/pipelines/rq3a.py`
 - Sunumda tek cümle: Ağ bozulmasını kontrollü taklit edip gerçek servislerle ölçtük; kayıp arttıkça teslim oranı birebir düştü ve en yavaş halka tahmin servisi çıktı.
+
+### Komut kanalı: MQTT `cmd`/`ack` ile cihaz ve edge kontrolü (Senaryo Kontrol)
+- Ne: Demoda ve testlerde sensör değerini, hatalı girdiyi, ağ koşulunu ve edge filtresini canlı değiştirmek için dashboard'dan API'ye, oradan MQTT komutu olarak cihazlara gidiyoruz; her cihaz komutu uygulayıp `ack` ile cevap veriyor. Komutlar ve cevaplar veritabanında kayıt altında.
+- Neden: Kontrol yolunu da IoT'nin kendi kanalından geçirmek, uzaktan cihaz yönetimini (komut, onay, hata cevabı) gösteriyor; "sahte düğme" yerine gerçek mesajlaşma. Her komut bir kimlikle (cmd_id) izlenir, geçersiz komut açık bir hata cevabı alır (ör. fiziksel sınırın dışındaki PM2.5 reddedilir, "hatalı girdi testi" işaretlenirse uygulanır). Müdahale mantığı MQTT'den bağımsız yazıldığı için broker olmadan test edilebiliyor, hata türleri RQ3b ile aynı fonksiyonu kullanıyor, böylece demo ile deney aynı davranıştır.
+- Alternatifler ve neden seçilmedi: Dashboard'un verileri doğrudan değiştirmesi (IoT katmanını atlar, tahminler gerçek akışı yansıtmaz), HTTP ile cihaza komut (cihazlar zaten MQTT istemcisi, ikinci bir kanal gerekmez), komutları yalnızca bellekte tutmak (denetim izi kalmaz).
+- Projede nerede: `src/airq/iot/schemas.py`, `src/airq/devices/modes.py`, `src/airq/devices/fleet.py`, `src/airq/server/control.py`
+- Sunumda tek cümle: Sensörü, ağı ve edge filtresini canlı bozabiliyoruz; komut MQTT'den cihaza gidiyor, cihaz onaylıyor ve tahminin tepkisini ekranda görüyoruz.
