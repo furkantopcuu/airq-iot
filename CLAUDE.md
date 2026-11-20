@@ -4,6 +4,7 @@ IoT dersi projesi: PM2.5 tahmini + erken uyarı yapan IoT sistemi + makale + can
 - Windows PowerShell; pathlib; python -m. paho-mqtt 2.x (CallbackAPIVersion.VERSION2).
 - Leakage yasak: yalnızca ≤t; t+h PM10 yok; fit yalnızca train; seçim yalnızca val; split sabit (§2.4).
 - Özellikler tek yerden: src/airq/features/build.py; edge kuralları tek yerden: src/airq/edge/quality.py (offline = online; parite testi zorunlu).
+- (Kullanıcı kararı 2026-11-20: Colab doğrulaması/iddiası kapsam dışı; kod yolları kalır, README iddia etmez.)
 - ML kodu laptop VE Colab'da çalışır (§14): mantık src/airq/'da, notebook'lar ince; yollar env.resolve_paths'ten; modeller LightGBM .txt + manifest.json; aşamalar önbellekli. IoT/demo yalnızca yerelde.
 - Yöntemler literatüre dayalı ([R#], Ek A). Değişiklik → KARARLAR.md + kaynak.
 - Sonuç/metrik/kaynak uydurma. Makaledeki her sayı reports/ altından (paper/NUMBERS.md). Kaynaklar DOI ile doğrulanır.

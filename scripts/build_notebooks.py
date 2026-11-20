@@ -1,4 +1,4 @@
-"""Generate the thin Colab/local notebooks (python -m scripts.build_notebooks).
+"""Generate the thin notebooks (python -m scripts.build_notebooks).
 
 Notebooks only call `airq.pipelines.*`; no business logic lives in them (spec 14.2).
 They are committed WITHOUT outputs (nbstripout).
@@ -13,10 +13,6 @@ from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
 OWNER = "furkantopcuu"
 REPO = f"https://github.com/{OWNER}/airq-iot.git"
-BADGE = (
-    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]"
-    f"(https://colab.research.google.com/github/{OWNER}/airq-iot/blob/main/notebooks/{{name}}.ipynb)"
-)
 
 PARAMS = """\
 # --- parameters -------------------------------------------------------------------------
@@ -65,9 +61,7 @@ if IN_COLAB:
 
 
 def _nb(name: str, title: str, blurb: str, minutes: str, cells: list) -> None:
-    head = new_markdown_cell(
-        f"# {title}\n\n{blurb}\n\n*Estimated time: {minutes}.*  \n{BADGE.format(name=name)}"
-    )
+    head = new_markdown_cell(f"# {title}\n\n{blurb}\n\n*Estimated time: {minutes}.*")
     nb = new_notebook(
         cells=[head, new_code_cell(PARAMS), new_code_cell(SETUP), new_code_cell(ENV), *cells],
         metadata={
@@ -85,10 +79,10 @@ def _nb(name: str, title: str, blurb: str, minutes: str, cells: list) -> None:
 
 def build() -> None:
     _nb(
-        "00_setup_colab",
+        "00_setup",
         "00 · Setup: data download and dataset build",
-        "Clones the repo (Colab), installs the `[ml]` extras, downloads the Beijing dataset, "
-        "verifies its SHA-256 and builds the cleaned dataset. With `AIRQ_FIXTURE=1` a small "
+        "Downloads the Beijing dataset, verifies its SHA-256 and builds the cleaned dataset "
+        "(run `pip install -e .[ml]` once beforehand). With `AIRQ_FIXTURE=1` a small "
         "synthetic dataset is used instead (CI, no internet).",
         "2-5 min (download ~8 MB)",
         [

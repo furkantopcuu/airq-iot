@@ -101,8 +101,7 @@ MQTT broker: Mosquitto kurun (`winget install EclipseFoundation.Mosquitto`); kur
 ## Canlı demo (tek komut)
 
 Demo temizlenmiş veriye ve eğitilmiş modellere ihtiyaç duyar. Modeller depoda tutulmaz (release
-asset); bir kez `python -m scripts.run_all` ile üretin (aşağıya bakın) ya da bir Colab çalışmasının
-`airq_artifacts_<tarih>.zip` dosyasını `python -m scripts.import_artifacts <zip>` ile yükleyin.
+asset); bir kez `python -m scripts.run_all` ile üretin (aşağıya bakın).
 
 ```powershell
 python -m scripts.demo
@@ -136,23 +135,18 @@ python -m scripts.run_all --check                        # tüm çıktıların v
 çıktılarına göre önbelleklidir; yarım kalan çalışma kaldığı yerden sürer. Test seti her home için bir
 kez değerlendirilir (koruma dosyaları); temiz bir home `--force` gerektirmez.
 
-### Colab notebook'ları
+### Notebook'lar
 
-ML kısmı tarayıcıda yeniden üretilir; canlı IoT sistemi (broker, filo, edge, pano, demo, RQ3a,
-senaryolar) Colab'da kalıcı servis ve güvenilir gecikme olmadığı için yalnızca yerelde çalışır.
+Aynı hatların ince sarmalayıcıları (`notebooks/`, `scripts/build_notebooks.py` üretir); yerel Jupyter için tasarlandı. Her biri `QUICK = True` ile başlar (2 istasyon, birkaç dakika); tam çalışma için `QUICK = False` yapın. Proje Google Colab desteği iddia etmez: notebook'lar orada doğrulanmadı.
 
 | Notebook | İçerik |
 |---|---|
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/00_setup_colab.ipynb) `00_setup_colab` | kurulum, indirme + SHA-256 kontrolü, temiz veri seti |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/01_data_eda.ipynb) `01_data_eda` | veri tablosu, korelasyon / eksik veri şekli, epizotlar |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/02_forecast_rq1.ipynb) `02_forecast_rq1` | RQ1: baseline'lar, LightGBM, ablasyon, LOSO, SHAP |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/03_early_warning_rq2.ipynb) `03_early_warning_rq2` | RQ2: uyarı kuralı, haze epizotları, öncül süre |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/04_robustness_rq3b.ipynb) `04_robustness_rq3b` | RQ3b: hatalı girdi, edge filtresi açık / kapalı |
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkantopcuu/airq-iot/blob/main/notebooks/06_figures_tables.ipynb) `06_figures_tables` | tüm makale şekilleri ve tabloları |
-
-Her notebook `QUICK = True` ile başlar (2 istasyon, birkaç dakika); tam çalışma için `QUICK = False`
-yapın. Sonuçlar `airq_artifacts_<tarih>.zip` olarak dışa aktarılır ve yerelde
-`python -m scripts.import_artifacts <zip>` ile içe aktarılır (model manifest'ini denetler).
+| `00_setup` | kurulum, indirme + SHA-256 kontrolü, temiz veri seti |
+| `01_data_eda` | veri tablosu, korelasyon / eksik veri şekli, epizotlar |
+| `02_forecast_rq1` | RQ1: baseline'lar, LightGBM, ablasyon, LOSO, SHAP |
+| `03_early_warning_rq2` | RQ2: uyarı kuralı, haze epizotları, öncül süre |
+| `04_robustness_rq3b` | RQ3b: hatalı girdi, edge filtresi açık / kapalı |
+| `06_figures_tables` | tüm makale şekilleri ve tabloları |
 
 ## Testler
 
@@ -180,7 +174,7 @@ madde); tam test takımı yalnızca Windows'ta doğrulanmıştır.
 ## Yapı
 
 `src/airq/` kütüphane - `scripts/` komut satırı girişleri - `configs/` YAML yapılandırma ve
-senaryolar - `notebooks/` ince Colab notebook'ları (`scripts/build_notebooks.py` üretir) -
+senaryolar - `notebooks/` ince notebook'lar (`scripts/build_notebooks.py` üretir) -
 `reports/` sonuç tabloları, metrikler, şekiller, senaryo koşuları - `paper/tables/` üretilmiş LaTeX /
 Markdown tablolar - `docs/` karar günlüğü ve bileşen gerekçeleri - `tests/`.
 
