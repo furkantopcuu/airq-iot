@@ -47,7 +47,10 @@ def build_message(
     kind = c.pop("kind", "device")
     if kind == "edge" and isinstance(c.get("filter"), bool):  # YAML 1.1 reads bare on/off as bool
         c["filter"] = "on" if c["filter"] else "off"
-    base = {"cmd_id": cmd_id or str(uuid.uuid4()), "issued_at": issued_at or datetime.now()}
+    base: dict[str, Any] = {
+        "cmd_id": cmd_id or str(uuid.uuid4()),
+        "issued_at": issued_at or datetime.now(),
+    }
     try:
         if kind == "device":
             return Command(**base, **c)

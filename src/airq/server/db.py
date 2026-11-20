@@ -30,11 +30,12 @@ READING_COLUMNS = [
     "wd", "wspm", "seq", "sent_at", "received_at", "quality_flags",
 ]  # fmt: skip
 
-_UPSERT_READING = f"""
-INSERT INTO readings({", ".join(READING_COLUMNS)})
-VALUES ({", ".join("?" for _ in READING_COLUMNS)})
-ON CONFLICT(station, ts) DO UPDATE SET dup_count = dup_count + 1
-"""
+# column names are module constants and the values are ? placeholders: no user input in the SQL text
+_UPSERT_READING = (
+    f"INSERT INTO readings({', '.join(READING_COLUMNS)}) "  # nosec B608
+    f"VALUES ({', '.join('?' for _ in READING_COLUMNS)}) "
+    "ON CONFLICT(station, ts) DO UPDATE SET dup_count = dup_count + 1"
+)
 
 _UPSERT_STATUS = """
 INSERT INTO device_status(station, status, updated_at) VALUES (?, ?, ?)

@@ -1,0 +1,12 @@
+# Release assets (GitHub Releases; trained models and the demo recording are not in the repository).
+# The checksums are written by `python -m scripts.make_release_assets`; `fetch_release` verifies them.
+tag: v0.3.0
+base_url: https://github.com/furkantopcuu/airq-iot/releases/download
+assets:
+  airq_models.zip:
+    kind: models            # LightGBM text models, manifest, hyper-parameters, thresholds -> models/
+    sha256: 104e61dc365a2e1086b0d694134ec6870a9312db4ad69c0ef643fda8b0ee4b33
+  demo_recorded.db:
+    kind: demo              # recorded SQLite for `python -m scripts.demo --offline`
+    dest: data/demo_recorded.db
+    sha256: 4703e7140e61b592a664c235b27a85a4efa7993d1adbd16b002bd890d320d5d4

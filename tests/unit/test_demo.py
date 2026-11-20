@@ -107,3 +107,13 @@ def test_smoke_runs_the_real_stack_and_a_command_through_the_http_api():
     result = demo.smoke(load_config())
     assert result["ok"] and result["command_status"] == 200 and result["command_ok"] is True
     assert result["readings_300"] >= 1  # the intervention reached the database (value or flag)
+
+
+def test_the_release_recording_is_used_when_there_is_no_live_demo_run(tmp_path, monkeypatch):
+    monkeypatch.setenv("AIRQ_HOME", str(tmp_path))
+    cfg = {"paths": {"db": "data/airq.db", "reports": "reports"}}
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "demo_recorded.db").write_bytes(b"x")
+    assert demo.pick_recorded_db(None, cfg).name == "demo_recorded.db"
+    (tmp_path / "data" / "demo.db").write_bytes(b"x")
+    assert demo.pick_recorded_db(None, cfg).name == "demo.db"  # a fresh live run still wins

@@ -14,7 +14,9 @@ from airq.pipelines.rq3a import aggregate_bench, plan_runs, run_bench
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--plan", choices=["smoke", "reduced", "full"], default="reduced")
+    ap.add_argument(
+        "--plan", choices=["smoke", "reduced", "full", "offline_fix"], default="reduced"
+    )
     ap.add_argument("--limit", type=int, default=None, help="run at most N pending runs")
     ap.add_argument(
         "--no-predictor", action="store_true", help="skip the predictor (plumbing tests)"

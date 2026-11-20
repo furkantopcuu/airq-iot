@@ -8,3 +8,8 @@ textColor = "#000000"
 
 [browser]
 gatherUsageStats = false
+
+[server]
+address = "127.0.0.1"   # the control panel has no login: never listen on the network
+enableXsrfProtection = true
+enableCORS = false

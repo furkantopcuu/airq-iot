@@ -137,13 +137,13 @@ def score_item(
             ref[st] = _observed(con, st, lo, hi)
     ph = ",".join("?" for _ in stations)
     preds = pd.read_sql_query(
-        f"SELECT station, made_at_ts, target_ts, horizon, yhat, n_neighbors FROM predictions "
+        f"SELECT station, made_at_ts, target_ts, horizon, yhat, n_neighbors FROM predictions "  # nosec B608
         f"WHERE station IN ({ph}) AND made_at_ts >= ? AND made_at_ts <= ?",
         con,
         params=[*stations, _iso(t0), _iso(win_end)],
     )
     warns = pd.read_sql_query(
-        f"SELECT station, made_at_ts, horizon, threshold FROM warnings "
+        f"SELECT station, made_at_ts, horizon, threshold FROM warnings "  # nosec B608
         f"WHERE station IN ({ph}) AND made_at_ts >= ? AND made_at_ts <= ? AND threshold = ?",
         con,
         params=[*stations, _iso(t0), _iso(win_end), THRESHOLD],

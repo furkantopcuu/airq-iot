@@ -110,3 +110,44 @@ def test_warning_message_schema_round_trips_and_rejects_extra_fields():
     assert WarningMsg.from_json(WarningMsg(**w).to_json()).horizon == 6
     with _pytest.raises(ValidationError):
         WarningMsg(**w, extra=1)
+
+
+def test_a_long_offline_station_is_not_waited_for():
+    p = make(stations=("A", "B", "C"), wait_s=0.5)
+    p.set_status("C", "offline", now=0.0)  # announced offline at t = 0
+    p.add(msg("A", 1), now=1.0)
+    p.add(msg("B", 1), now=1.0)
+    assert p.ready(now=1.0) == [pd.Timestamp(T0 + timedelta(hours=1))]  # no wait for C
+    p.predict(pd.Timestamp(T0 + timedelta(hours=1)))
+    assert p.expired == 1  # the hour still counts as having a missing station
+
+
+def test_the_last_readings_of_a_station_that_just_went_offline_are_still_awaited():
+    """The status message overtakes the telemetry that is still travelling through the edge."""
+    p = make(stations=("A", "B"), wait_s=0.5)
+    p.add(msg("A", 0), now=1.0)
+    p.set_status("B", "offline", now=1.0)  # B shut down cleanly; its last reading is in flight
+    assert p.ready(now=1.1) == []  # inside the grace period: keep waiting
+    p.add(msg("B", 0), now=1.2)  # ...and the reading arrives
+    assert p.ready(now=1.2) == [pd.Timestamp(T0)]
+    p.predict(pd.Timestamp(T0))
+    assert p.expired == 0 and p.late_dropped == 0  # nothing was predicted early
+
+
+def test_a_station_that_comes_back_is_waited_for_again():
+    p = make(stations=("A", "B"), wait_s=0.5)
+    p.set_status("B", "offline", now=0.0)
+    p.set_status("B", "online", now=2.0)
+    p.add(msg("A", 5), now=3.0)
+    assert p.ready(now=3.1) == []  # B is expected again
+    assert p.ready(now=3.5) == [pd.Timestamp(T0 + timedelta(hours=5))]
+
+
+def test_unknown_status_payloads_change_nothing_and_the_option_can_be_turned_off():
+    p = make()
+    p.set_status("B", "weird")
+    assert p.offline == {}
+    q = OnlinePredictor(CFG, None, 0, ["A", "B"], wait_s=0.5, skip_offline=False)
+    q.set_status("B", "offline", now=0.0)
+    q.add(msg("A", 1), now=5.0)
+    assert q.ready(now=5.1) == []  # with the option off the old behaviour (always wait) remains

@@ -15,6 +15,26 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: pytest -m "not broker and not slow" --cov=airq --cov-report=term-missing
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt
+      - run: pip install -e . mypy bandit
+      - run: pre-commit run --all-files   # ruff, formatting, secrets scan, notebook outputs
+      - run: mypy                         # the typed core listed in pyproject.toml
+      - run: bandit -q -r src scripts -ll # static security analysis, medium severity and up
+  dependency-audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true               # informational: advisories do not block a merge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements.txt
   notebooks:
     runs-on: ubuntu-latest
     continue-on-error: true

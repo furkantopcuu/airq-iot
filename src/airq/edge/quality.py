@@ -141,7 +141,7 @@ def _stuck_reference(values: list[float | None], n: int) -> list[bool]:
         out.append(
             len(window) == n
             and None not in window
-            and all(np.isfinite(w) for w in window)
+            and all(w is not None and np.isfinite(w) for w in window)
             and len(set(window)) == 1
         )
     return out

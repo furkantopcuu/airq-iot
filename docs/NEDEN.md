@@ -248,4 +248,3 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Gauss varsayımlı aralık (PM2.5 dağılımı çarpık, haze'de kalın kuyruk), bootstrap toplulukları (çok daha pahalı), ayrı bir derin model (ek bağımlılık, LightGBM zaten aynı özellikleri kullanıyor).
 - Projede nerede: `src/airq/models/quantile.py`, `src/airq/pipelines/rq4.py`
 - Sunumda tek cümle: Tahminin yanına güven aralığı koyduk; aralık orta kirlilikte güvenilir ama aşırı tepelerde yetersiz, üst sınırla uyarı daha fazla olayı yakalıyor ama daha çok yanlış alarm veriyor.
-

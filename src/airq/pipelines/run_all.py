@@ -153,6 +153,15 @@ def stages(trials: int = OPTUNA_TRIALS) -> list[Stage]:
             est="40 min (needs the broker)",
         ),
         Stage(
+            "offline_fix",
+            "run_system_bench",
+            ("--plan", "offline_fix"),
+            (t + "rq3a_bench_offline_fix.csv",),
+            skip_in_quick=True,
+            group="system",
+            est="25 min (needs the broker)",
+        ),
+        Stage(
             "figures",
             "make_figures",
             (),

@@ -22,6 +22,7 @@ from __future__ import annotations
 import math
 import threading
 from dataclasses import dataclass, field
+from typing import TypeGuard
 
 import numpy as np
 import pandas as pd
@@ -37,7 +38,7 @@ COUPLED_MODES = ("manual", "offset", "scale", "ramp")
 HOUR = pd.Timedelta(hours=1)
 
 
-def _isnum(x) -> bool:
+def _isnum(x) -> TypeGuard[float]:
     return x is not None and not (isinstance(x, float) and math.isnan(x))
 
 
@@ -178,8 +179,9 @@ class InterventionSet:
                 if iv.active(ts):
                     self._apply_one(iv, ts, out)
             for var, lim in PHYSICAL_RANGE.items():
-                if _isnum(out.get(var)) and not self._allows_invalid(var):
-                    out[var] = float(min(max(out[var], lim[0]), lim[1]))
+                v = out.get(var)
+                if _isnum(v) and not self._allows_invalid(var):
+                    out[var] = float(min(max(v, lim[0]), lim[1]))
             for var, x in out.items():
                 if _isnum(x):
                     self._last_out[var] = float(x)
@@ -207,6 +209,7 @@ class InterventionSet:
             elif c.mode == "scale" and _isnum(cur):
                 new = cur * p["factor"]
             elif c.mode == "ramp" and _isnum(cur):
+                assert c.duration_h  # validated by the Command schema (ramp needs a length)
                 frac = min(k / c.duration_h, 1.0)
                 new = (
                     (1 - frac) * cur + frac * p["target"]
@@ -217,14 +220,9 @@ class InterventionSet:
                 new = self._perturb(iv, var, cur, k)
             out[var] = new
             coupled = c.coupled and c.mode in COUPLED_MODES and "pm10" not in c.variables
-            if (
-                var == "pm25"
-                and coupled
-                and _isnum(new)
-                and _isnum(cur)
-                and _isnum(out.get("pm10"))
-            ):
-                out["pm10"] = out["pm10"] + (new - cur) * self.coupled_ratio
+            pm10 = out.get("pm10")
+            if var == "pm25" and coupled and _isnum(new) and _isnum(cur) and _isnum(pm10):
+                out["pm10"] = pm10 + (new - cur) * self.coupled_ratio
 
     def _perturb(self, iv: Intervention, var: str, x, k: int):
         p = iv.cmd.params

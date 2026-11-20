@@ -55,7 +55,8 @@ class Run:
 
 
 def plan_runs(name: str) -> list[Run]:
-    """reduced: about one hour; full: the specified grid; smoke: a plumbing check."""
+    """reduced: about one hour; full: the specified grid; smoke: a plumbing check; offline_fix:
+    the offline-device runs repeated after the predictor stopped waiting for offline devices."""
     grid = [(loss, delay) for loss in (0.0, 0.05, 0.10, 0.20) for delay in (0.0, 200.0)]
     if name == "smoke":
         return [Run("smoke", 36000.0, 0.10, 200.0)]
@@ -68,6 +69,8 @@ def plan_runs(name: str) -> list[Run]:
         ]
         runs += [Run("full", 36000.0, 0.0, 0.0, k, r) for k in (1, 3, 6) for r in range(3)]
         return runs
+    if name == "offline_fix":  # after the predictor stopped waiting for offline devices
+        return [Run("offline_fix", 36000.0, 0.0, 0.0, k, r) for k in (0, 1, 3, 6) for r in range(3)]
     if name == "reduced":
         runs = [Run("reduced", 36000.0, lo, de, 0, r) for lo, de in grid for r in range(2)]
         runs += [
@@ -477,8 +480,8 @@ def paired_rmse(run_db: Path, base_db: Path, truth: pd.DataFrame) -> dict:
     baseline over all stations would mix station difficulty into the "damage".
     """
     cols = "station, target_ts, horizon, yhat"
-    a = _read(run_db, f"SELECT {cols} FROM predictions", parse_dates=["target_ts"])
-    b = _read(base_db, f"SELECT {cols} FROM predictions", parse_dates=["target_ts"])
+    a = _read(run_db, f"SELECT {cols} FROM predictions", parse_dates=["target_ts"])  # nosec B608
+    b = _read(base_db, f"SELECT {cols} FROM predictions", parse_dates=["target_ts"])  # nosec B608
     m = a.merge(b, on=["station", "target_ts", "horizon"], suffixes=("", "_base"))
     m = m.merge(truth.rename(columns={"ts": "target_ts"}), on=["station", "target_ts"])
     m = m.dropna(subset=["pm25_raw"])
@@ -511,8 +514,9 @@ def predictor_behind(runs: pd.DataFrame) -> pd.Series:
     runs whose warning latency exceeds 1.25 x the median of the intact-network runs at that speed.
     (At 36000x the predictor is saturated by design, so only the offline comparison is judged.)"""
     behind = pd.Series(False, index=runs.index)
-    slow = runs["speedup"] == runs["speedup"].min()
-    behind |= slow & (runs["drain_s"] > BEHIND_DRAIN_S)
+    if runs["speedup"].nunique() > 1:  # the real-time rule needs a real-time speed in the plan
+        slow = runs["speedup"] == runs["speedup"].min()
+        behind |= slow & (runs["drain_s"] > BEHIND_DRAIN_S)
     fast = runs["speedup"] == runs["speedup"].max()
     intact = runs[fast & (runs["offline_k"] == 0)]["lat_warn_p50_ms"].median()
     behind |= fast & (runs["offline_k"] > 0) & (runs["lat_warn_p50_ms"] > BEHIND_FACTOR * intact)
@@ -558,6 +562,8 @@ def aggregate_bench(cfg: dict, plan: str = "reduced") -> pd.DataFrame:
     # bimodal (kept up ~1 s / fell behind ~115 s): the mean is meaningless, use the median
     agg["lat_warn_p50_ms_median"] = g["lat_warn_p50_ms"].median()
     out = agg.reset_index()
-    out.to_csv(tables / "rq3a_bench.csv", index=False)
+    out.to_csv(
+        tables / ("rq3a_bench.csv" if plan == "full" else f"rq3a_bench_{plan}.csv"), index=False
+    )
     runs.to_csv(bench / f"runs_{plan}.csv", index=False)
     return out

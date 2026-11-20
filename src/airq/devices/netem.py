@@ -52,7 +52,7 @@ class NetEm:
 
         self.default = params or NetParams()
         self.per_station: dict[str, NetParams] = {}
-        self._rng = random.Random(seed)
+        self._rng = random.Random(seed)  # nosec B311 - network emulation, not cryptography
         self._lock = threading.Lock()
 
     def set(self, params: NetParams, station: str | None = None) -> None:

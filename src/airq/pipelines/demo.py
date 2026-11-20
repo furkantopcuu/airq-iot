@@ -69,11 +69,15 @@ def wait_for(cond, timeout_s: float, every_s: float = 0.25) -> bool:
 
 
 def pick_recorded_db(explicit: str | None, cfg: dict) -> Path | None:
-    """The database for --offline: the given one, else the demo run's, else a scenario run's."""
+    """The database for --offline: the given one, the last demo run, the release recording, ..."""
     if explicit:
         return Path(explicit)
     paths = resolve_paths(cfg["paths"])
-    candidates = [paths["db"].parent / "demo.db", paths["db"]]
+    candidates = [
+        paths["db"].parent / "demo.db",  # the last live demo run
+        paths["db"].parent / "demo_recorded.db",  # the recording from the GitHub Release
+        paths["db"],
+    ]
     work = paths["reports"] / "scenarios" / "work"
     if work.exists():
         candidates += sorted(work.glob("gercek_haze_replay.db")) + sorted(work.glob("*.db"))
@@ -129,8 +133,13 @@ def api_args(port: int) -> list[str]:
 
 def dashboard_args(port: int) -> list[str]:
     app = repo_root() / "src" / "airq" / "dashboard" / "app.py"
-    return ["streamlit", "run", str(app), "--server.port", str(port), "--server.headless", "true",
-            "--browser.gatherUsageStats", "false"]  # fmt: skip
+    return [
+        "streamlit", "run", str(app),
+        "--server.port", str(port),
+        "--server.address", "127.0.0.1",  # the control panel has no login: loopback only
+        "--server.headless", "true",
+        "--browser.gatherUsageStats", "false",
+    ]  # fmt: skip
 
 
 def fleet_args(

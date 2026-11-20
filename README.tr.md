@@ -23,6 +23,19 @@ English: [README.md](README.md).
 | ML | sızıntısız özellikler, persistence / mevsimsel naif / ridge / LightGBM, Optuna, LOSO, SHAP, DM testleri | `src/airq/features/`, `src/airq/models/`, `src/airq/pipelines/` |
 | Arayüz | Streamlit panosu (6 sayfa, senaryo kontrol paneli) | `src/airq/dashboard/` |
 
+## Canlı pano
+
+*Senaryo Kontrol + Canlı izleme* sayfasından, kaydedilmiş bir koşunun ekran görüntüleri (gerçek bir haze
+epizodu, yerel kirlilik rampası ve sensör sıçraması arızaları, edge filtresi kapalı ve açık). Veri ya da
+model olmadan kendiniz oynatabilirsiniz: `python -m scripts.fetch_release --only demo`, ardından
+`python -m scripts.demo --offline`.
+
+![Kontrol paneli ve ağ kartları](docs/assets/dashboard_control.jpg)
+
+![q10-q90 bandı, uyarılar ve eşiklerle tahmin](docs/assets/dashboard_forecast_band.jpg)
+
+![Aktif müdahaleler ve puan tablosu](docs/assets/dashboard_scoreboard.jpg)
+
 ## Sonuçlar
 
 Aşağıdaki tablolar `reports/tables/*.csv` dosyalarından `python -m scripts.make_tables --readme`
@@ -140,7 +153,7 @@ Canlı sistem ölçümü (RQ3a: kayıp, gecikme, çevrimdışı cihaz, CPU ve be
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.txt      # sonuçların üretildiği tam sürümler için  -c constraints.txt  ekleyin
 pip install -e .
 pre-commit install
 pytest -m "not broker and not slow"
@@ -152,7 +165,9 @@ MQTT broker: Mosquitto kurun (`winget install EclipseFoundation.Mosquitto`); kur
 ## Canlı demo (tek komut)
 
 Demo temizlenmiş veriye ve eğitilmiş modellere ihtiyaç duyar. Modeller depoda tutulmaz (release
-asset); bir kez `python -m scripts.run_all` ile üretin (aşağıya bakın).
+asset): sağlama toplamı doğrulamalı olarak
+`python -m scripts.fetch_release --only models` ile indirin ya da bir kez
+`python -m scripts.run_all` ile üretin (aşağıya bakın).
 
 ```powershell
 python -m scripts.demo
@@ -170,8 +185,10 @@ epizodu içinde saniyede 1 simüle saat oynatır ve panoyu açar. `Ctrl+C` hepsi
 3. Ani sıçrama edge filtresi tarafından işaretlenip boşaltılır (`rate_jump`): edge görevini yapıyor.
    Gerçekçi bir kirlilik artışı için `ramp` kullanın ya da hasarı görmek için filtreyi kapatın.
 
-`python -m scripts.demo --offline` panoyu broker olmadan kayıtlı bir SQLite dosyasıyla açar (kontroller
-kapalı); `python -m scripts.demo --smoke` 10 saniyelik uçtan uca kendi kendine testtir.
+**Veri ve model gerekmez:** `python -m scripts.fetch_release --only demo` kayıtlı bir koşuyu (müdahaleli
+bir haze epizodu ve q10-q90 bandı) indirir, `python -m scripts.demo --offline` panoyu broker olmadan
+bunun üzerinde açar (kontroller kapalı). `python -m scripts.demo --smoke` 10 saniyelik uçtan uca
+kendi kendine testtir.
 
 ## Sonuçları yeniden üretme
 
@@ -220,8 +237,11 @@ madde); tam test takımı yalnızca Windows'ta doğrulanmıştır.
 - Tüm sistem ölçümleri tek makineden gelir (mutlak değerler makineye özgüdür). RQ3a, belirtilen
   grid'in tamamını 3 tekrarla koşmuştur; hazır senaryolar birer kez, eşleştirilmiş edge açık /
   kapalı karşılaştırması ise arıza türü başına 3 pencerede koşmuştur (anlamlılık testi yok).
-- 3600×'te (saniyede 1 simüle saat) veri kaybında (eksik istasyon için 500 ms beklenir) ya da
-  cihaz çevrimdışı kalınca tahmin servisi geride kalır; tablo kaç koşunun geride kaldığını verir.
+- 3600×'te (saniyede 1 simüle saat) veri kaybında (eksik istasyon için 500 ms beklenir) tahmin
+  servisi geride kalır; tablo kaç koşunun geride kaldığını verir. `offline` bildiren cihaz için
+  artık beklenmez (kıyaslama buldu, düzeltildi, yeniden ölçüldü: 1 kopuk cihazda medyan uyarı
+  gecikmesi 148,9 sn → 37,0 sn, geride kalan koşu yok); kaybolan mesaj ise bir şey bildirmediği
+  için o bekleme sürer.
 - Komut kanalında kimlik doğrulama yoktur (yalnızca localhost); gerçek dağıtımda MQTT ACL + TLS gerekir.
 - Modeller aşırı kirlilik tepelerini olduğundan düşük tahmin eder (`reports/tables/rq1_extreme.csv`).
 

@@ -70,7 +70,7 @@ def _nb(name: str, title: str, blurb: str, minutes: str, cells: list) -> None:
         },
     )
     for i, c in enumerate(nb.cells):
-        c["id"] = f"cell-{i:02d}"
+        c["id"] = str(i)  # the ids nbstripout would assign: generator and hook then agree
     path = Path(__file__).resolve().parents[1] / "notebooks" / f"{name}.ipynb"
     path.parent.mkdir(exist_ok=True)
     nbformat.write(nb, path)

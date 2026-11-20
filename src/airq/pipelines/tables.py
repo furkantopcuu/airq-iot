@@ -294,6 +294,26 @@ def _ab_row(fault: str, start: str, r) -> dict:
     }
 
 
+def t_rq3a_offline_fix(tables: Path) -> pd.DataFrame:
+    """Warning latency with offline devices before and after the predictor stopped waiting."""
+    b = _read(tables, "rq3a_bench")
+    b = b[(b["speedup"] == 36000) & (b["loss"] == 0) & (b["delay_ms"] == 0)].set_index("offline_k")
+    a = _read(tables, "rq3a_bench_offline_fix").set_index("offline_k")
+    rows = []
+    for k in sorted(set(b.index) & set(a.index)):
+        rows.append(
+            {
+                "Offline devices": str(int(k)),
+                "Warning p50 before (s)": fmt(b.loc[k, "lat_warn_p50_ms_median"] / 1000, 1),
+                "Warning p50 after (s)": fmt(a.loc[k, "lat_warn_p50_ms_median"] / 1000, 1),
+                "Behind before": f"{int(b.loc[k, 'behind_runs'])}/{int(b.loc[k, 'reps'])}",
+                "Behind after": f"{int(a.loc[k, 'behind_runs'])}/{int(a.loc[k, 'reps'])}",
+                "Δ RMSE h=1 after": fmt(a.loc[k, "paired_delta_h1_mean"], 2),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 TABLES = [
     TableSpec(
         "dataset",
@@ -364,6 +384,15 @@ TABLES = [
         "RQ3a: ağ bozulması altında sistem ölçümleri (kısaltılmış plan).",
         "RQ3a: live-system measurements under network impairment (reduced plan).",
         t_rq3a,
+    ),
+    TableSpec(
+        "rq3a_offline_fix",
+        "rq3a_bench,rq3a_bench_offline_fix",
+        "RQ3a: çevrimdışı cihazla uyarı gecikmesi, tahmin servisi çevrimdışı cihazı beklemeyi "
+        "bırakmadan önce ve sonra (36000×, 3 tekrar).",
+        "RQ3a: warning latency with offline devices before and after the predictor stopped waiting "
+        "for them (36000x, 3 repetitions).",
+        t_rq3a_offline_fix,
     ),
     TableSpec(
         "rq3b",

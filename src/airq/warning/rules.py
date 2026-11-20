@@ -36,7 +36,7 @@ def apply_cooldown(flags: np.ndarray, cooldown_h: int) -> np.ndarray:
     for i in np.flatnonzero(flags):
         if i - last >= cooldown_h:
             alerts[i] = True
-            last = i
+            last = int(i)
     return alerts
 
 

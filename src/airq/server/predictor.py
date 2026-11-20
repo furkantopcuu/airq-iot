@@ -56,6 +56,7 @@ class OnlinePredictor:
     thresholds: dict | None = None  # {"150": {"6": delta, ...}} from warning_thresholds.json
     cooldown_h: int = 6
     quantiles: bool = False  # also write the calibrated q10 / q90 (RQ4); display only
+    skip_offline: bool = True  # do not wait for stations that announced `offline` (retained)
     log: list[PredictionLog] = field(default_factory=list)
     late_dropped: int = 0
     expired: int = 0  # timestamps predicted after the wait ran out (some station missing)
@@ -67,6 +68,7 @@ class OnlinePredictor:
         self.earliest: pd.Timestamp | None = None
         self.models: dict[int, object] = {}
         self.qmodels: dict[tuple[int, float], object] = {}
+        self.offline: dict[str, float] = {}  # station -> when its `offline` status arrived
         self.q_scale: dict[str, float] = {}
         self.fcfg = FeatureConfig.from_cfg(self.cfg, k=self.k, neighbors=self.neighbors)
         self.version = f"{config_hash(self.cfg)}-{git_short_hash()}"
@@ -89,6 +91,32 @@ class OnlinePredictor:
             self.first_seen.setdefault(ts, now)
             self.earliest = ts if self.earliest is None else min(self.earliest, ts)
 
+    def set_status(self, station: str, status: str, now: float | None = None) -> None:
+        """Track the retained device status (MQTT `airq/<station>/status`).
+
+        A station that announced `offline` (LWT or a clean shutdown) is no longer waited for once
+        `wait_s` has passed since the announcement: waiting for a reading that can never arrive
+        only added `predictor_wait_ms` to every hour (found by the RQ3a benchmark: with one device
+        offline the warning latency grew about four-fold). The grace period matters: the status
+        message travels broker -> predictor while the station's last readings still travel through
+        the edge gateway; without it the final hours would be predicted before they arrived.
+        Missing readings are still treated as missing (`n_neighbors_available` drops).
+        """
+        now = time.monotonic() if now is None else now
+        with self._lock:
+            if status == topics.OFFLINE:
+                self.offline.setdefault(station, now)
+            elif status == topics.ONLINE:
+                self.offline.pop(station, None)
+
+    def _expected(self, now: float) -> list[str]:
+        """Stations the current hour waits for (call with the lock held)."""
+        if not self.skip_offline:
+            return list(self.stations)
+        return [
+            s for s in self.stations if s not in self.offline or now - self.offline[s] < self.wait_s
+        ]
+
     # --- scheduling ----------------------------------------------------------------------
     def ready(self, now: float | None = None) -> list[pd.Timestamp]:
         """Timestamps to predict now, strictly in order: complete, or past their wait deadline."""
@@ -98,7 +126,7 @@ class OnlinePredictor:
             for ts in sorted(
                 t for t in self.first_seen if self.last_done is None or t > self.last_done
             ):
-                complete = all(ts in self.buf[s] for s in self.stations)
+                complete = all(ts in self.buf[s] for s in self._expected(now))
                 if complete or now - self.first_seen[ts] >= self.wait_s:
                     out.append(ts)
                 else:
@@ -258,12 +286,20 @@ def run(
     client = make_client("predictor")
 
     def on_message(_c, _u, msg):
+        if msg.topic.endswith("/status"):
+            with contextlib.suppress(ValueError):
+                pred.set_status(
+                    topics.station_from_topic(msg.topic), msg.payload.decode("utf-8", "replace")
+                )
+            return
         with contextlib.suppress(ValueError):  # invalid payloads: the edge already counts them
             pred.add(Telemetry.from_json(msg.payload))
 
     client.on_message = on_message
     connect_blocking(client, host, port)
-    client.subscribe(topics.EDGE_ALL, qos=topics.EDGE_TELEMETRY.qos)
+    client.subscribe(
+        [(topics.EDGE_ALL, topics.EDGE_TELEMETRY.qos), (topics.STATUS_ALL, topics.STATUS.qos)]
+    )
     try:
         while not stop.is_set():
             for ts in pred.ready():

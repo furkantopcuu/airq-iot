@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "airq-iot"
-version = "0.0.1"
+version = "0.3.0"
 description = "IoT-based air quality monitoring with PM2.5 forecasting and early warning"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,8 +14,8 @@ dependencies = []
 [project.optional-dependencies]
 ml = [
   "pandas>=2.1", "numpy>=1.26", "scikit-learn>=1.4", "lightgbm>=4.1", "optuna>=3.5",
-  "shap>=0.44", "scipy>=1.11", "statsmodels>=0.14", "pyarrow>=14", "pyyaml>=6.0",
-  "pydantic>=2.5", "pydantic-settings>=2.1", "requests>=2.31", "matplotlib>=3.8",
+  "scipy>=1.11", "pyarrow>=14", "pyyaml>=6.0",
+  "pydantic>=2.5", "requests>=2.31", "matplotlib>=3.8",
 ]
 iot = ["paho-mqtt>=2.0", "amqtt>=0.11", "fastapi>=0.110", "uvicorn[standard]>=0.27", "psutil>=5.9"]
 dash = ["streamlit>=1.31", "plotly>=5.18"]
@@ -37,3 +37,22 @@ select = ["E", "F", "I", "B", "UP", "N", "SIM"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["broker: needs a real MQTT broker", "slow: long-running", "integration: integration test"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+# A curated, fully typed core (schemas, edge rules, device modes, scoring helpers); the rest of the
+# code base is checked by the tests. New modules can be added here once they pass.
+files = [
+  "src/airq/iot/schemas.py", "src/airq/iot/topics.py", "src/airq/edge/quality.py",
+  "src/airq/devices/modes.py", "src/airq/models/quantile.py", "src/airq/eval/metrics.py",
+  "src/airq/scenarios/spec.py", "src/airq/pipelines/release.py", "src/airq/warning/rules.py",
+]
+
+[tool.coverage.run]
+source = ["src/airq"]
+
+[tool.coverage.report]
+fail_under = 60  # measured 71 % on the fast suite locally (CI skips tests that need the data)
+exclude_lines = ["pragma: no cover", "if __name__ == .__main__.:", "raise NotImplementedError"]

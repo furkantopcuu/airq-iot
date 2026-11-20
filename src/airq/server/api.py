@@ -13,15 +13,19 @@ from datetime import datetime, timedelta
 from enum import IntEnum
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlsplit
 
 import numpy as np
 from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from airq import __version__
 from airq.server import db
 
 HORIZONS = (1, 6, 24)
+LOCAL_HOSTS = ["127.0.0.1", "localhost", "[::1]", "::1", "testserver"]  # testserver: TestClient
 
 
 class Horizon(IntEnum):
@@ -98,7 +102,27 @@ def create_app(
 ) -> FastAPI:
     """`controller` / `truth` can be injected (tests); by default the control endpoints connect to
     the broker named by AIRQ_BROKER on first use and read the recorded data lazily."""
-    app = FastAPI(title="airq-iot API", version="0.2")
+    app = FastAPI(title="airq-iot API", version=__version__)
+    # The API and its control endpoints have no login (localhost only, spec 9.7). Two cheap guards
+    # keep a web page open in the same browser from driving them: the Host header must be a loopback
+    # name (DNS rebinding) and a state-changing request that carries an Origin header must come
+    # from a loopback origin (CSRF). The dashboard calls the API from Python and sends no Origin.
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=LOCAL_HOSTS)
+
+    @app.middleware("http")
+    async def refuse_foreign_origins(request, call_next):
+        origin = request.headers.get("origin")
+        changing = request.method not in ("GET", "HEAD", "OPTIONS")
+        if (
+            changing
+            and origin is not None
+            and (
+                urlsplit(origin).hostname not in ("127.0.0.1", "localhost", "::1")  # "null" too
+            )
+        ):
+            return JSONResponse({"detail": "cross-site request refused"}, status_code=403)
+        return await call_next(request)
+
     paths = {"db": Path(db_path or os.environ.get("AIRQ_DB", "data/airq.db"))}
     paths["reports"] = Path(reports_dir or os.environ.get("AIRQ_REPORTS", "reports"))
 

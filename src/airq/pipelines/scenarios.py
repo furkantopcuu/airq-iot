@@ -62,7 +62,13 @@ def sim_clock(db_path: Path):
 
 
 def run_scenario(
-    cfg: dict, sc: Scenario, work: Path, truth: Truth, speedup: float = 7200.0, k_main: int = 11
+    cfg: dict,
+    sc: Scenario,
+    work: Path,
+    truth: Truth,
+    speedup: float = 7200.0,
+    k_main: int = 11,
+    quantiles: bool = False,
 ) -> dict:
     work.mkdir(parents=True, exist_ok=True)
     start, zero, end = scenario_window(sc)
@@ -84,7 +90,8 @@ def run_scenario(
             env,
         ),
         "predictor": _spawn(
-            ["airq.server.predictor", "--broker", bk, "--k", str(k_main), "--db", str(db_path)],
+            ["airq.server.predictor", "--broker", bk, "--k", str(k_main), "--db", str(db_path)]
+            + (["--quantiles"] if quantiles else []),
             work / f"{sc.name}.pred.log",
             env,
         ),
@@ -356,3 +363,42 @@ def paired_differences(df: pd.DataFrame) -> pd.DataFrame:
             row[f"{c}_diff"] = off[c].iloc[0] - on[c].iloc[0]
         out.append(row)
     return pd.DataFrame(out)
+
+
+def demo_recording_scenario() -> Scenario:
+    """The run shipped as `demo_recorded.db`: a real haze episode (the demo window) with a local
+    pollution ramp and a spike fault with the edge filter off and on, so the offline dashboard
+    shows interventions, the scoreboard and the q10-q90 band."""
+    fault = {"mode": "perturb", "params": {"type": "spike", "severity": 8}, "duration_h": 3,
+             "variables": ["pm25"]}  # fmt: skip
+    return Scenario(
+        name="demo_recorded",
+        description="recording for the offline demo (haze episode, ramp, spike with edge off/on)",
+        start="2016-12-23 16:00",
+        warmup_h=240,
+        duration_h=100,
+        steps=[
+            Step(at_h=2, command={
+                "target": "Dongsi", "variables": ["pm25"], "mode": "ramp",
+                "params": {"delta": 120, "hold_h": 6}, "duration_h": 6, "coupled": True,
+                "label": "local-ramp",
+            }),
+            Step(at_h=20, command={"kind": "edge", "filter": "off"}),
+            Step(at_h=20, command={**fault, "target": "Huairou", "label": "spike-edge-off"}),
+            Step(at_h=30, command={"kind": "edge", "filter": "on"}),
+            Step(at_h=30, command={**fault, "target": "Gucheng", "label": "spike-edge-on"}),
+        ],
+    )  # fmt: skip
+
+
+def record_demo(cfg: dict, speedup: float = 7200.0, out: Path | None = None) -> Path:
+    """Run the recording scenario on the real stack (with the q10-q90 band), copy its database."""
+    import shutil
+
+    paths = resolve_paths(cfg["paths"])
+    work = paths["reports"] / "scenarios" / "work"
+    run_scenario(cfg, demo_recording_scenario(), work, Truth.from_cfg(cfg), speedup, quantiles=True)
+    out = out or paths["db"].parent / "demo_recorded.db"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(work / "demo_recorded.db", out)
+    return out

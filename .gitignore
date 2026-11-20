@@ -31,3 +31,16 @@ docs/TALIMAT.md
 # raw benchmark work dirs (databases, logs)
 reports/bench/work/
 reports/scenarios/work/
+/release/
+/.downloads/
+
+# secrets: never commit these (the project itself needs none)
+.env*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+credentials*
+secrets.*

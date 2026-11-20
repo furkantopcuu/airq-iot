@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-20T20:47:25",
+  "generated_at": "2026-11-20T22:38:52",
   "tables": {
     "dataset": {
       "source": [
@@ -166,6 +166,22 @@
         "Warning p50 (s)",
         "Behind",
         "Δ RMSE h=1"
+      ]
+    },
+    "rq3a_offline_fix": {
+      "source": [
+        "reports/tables/rq3a_bench.csv",
+        "reports/tables/rq3a_bench_offline_fix.csv"
+      ],
+      "caption_en": "RQ3a: warning latency with offline devices before and after the predictor stopped waiting for them (36000x, 3 repetitions).",
+      "rows": 4,
+      "columns": [
+        "Offline devices",
+        "Warning p50 before (s)",
+        "Warning p50 after (s)",
+        "Behind before",
+        "Behind after",
+        "Δ RMSE h=1 after"
       ]
     },
     "rq3b": {

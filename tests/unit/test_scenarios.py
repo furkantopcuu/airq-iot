@@ -468,3 +468,13 @@ def test_ab_table_and_paired_differences_from_stored_runs(tmp_path):
     d = paired_differences(df).iloc[0]
     assert d["mae_window_h1_diff"] == 20.0 and d["mae_window_h6_diff"] == 8.0
     assert d["peak_forecast_h6_diff"] == 40.0  # positive = the filter helped
+
+
+def test_the_demo_recording_scenario_is_valid_and_has_the_three_labelled_interventions():
+    from airq.pipelines.scenarios import demo_recording_scenario
+
+    sc = demo_recording_scenario()
+    assert sc.labels() == ["local-ramp", "spike-edge-off", "spike-edge-on"]
+    assert sc.warmup_h == 240 and sc.start == "2016-12-23 16:00"  # the demo window
+    kinds = [type(build_message(s.command)).__name__ for s in sc.steps]
+    assert kinds.count("EdgeControl") == 2 and kinds.count("Command") == 3

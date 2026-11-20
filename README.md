@@ -23,6 +23,18 @@ warnings react. Türkçe: [README.tr.md](README.tr.md).
 | ML | leakage-safe features, persistence / seasonal-naive / ridge / LightGBM, Optuna, LOSO, SHAP, DM tests | `src/airq/features/`, `src/airq/models/`, `src/airq/pipelines/` |
 | UI | Streamlit dashboard (6 pages, scenario control panel) | `src/airq/dashboard/` |
 
+## Live dashboard
+
+Screenshots of the *Senaryo Kontrol + Canlı izleme* page from a recorded run (a real haze episode with a
+local pollution ramp and sensor-spike faults, edge filter off and on). Replay it yourself without any
+data or models: `python -m scripts.fetch_release --only demo`, then `python -m scripts.demo --offline`.
+
+![Control panel and network cards](docs/assets/dashboard_control.jpg)
+
+![Forecast with the q10-q90 band, warnings and thresholds](docs/assets/dashboard_forecast_band.jpg)
+
+![Active interventions and the scoreboard](docs/assets/dashboard_scoreboard.jpg)
+
 ## Results
 
 Everything below is generated from `reports/tables/*.csv` by `python -m scripts.make_tables --readme`.
@@ -141,7 +153,7 @@ The live-system benchmark (RQ3a: loss, delay, offline devices, CPU and memory) i
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.txt      # add  -c constraints.txt  for the exact versions the results were made with
 pip install -e .
 pre-commit install
 pytest -m "not broker and not slow"
@@ -153,7 +165,9 @@ MQTT broker: install Mosquitto (`winget install EclipseFoundation.Mosquitto`); w
 ## Run the live demo (one command)
 
 The demo needs the cleaned data and the trained models. Models are not stored in the repository
-(release asset); build them once with `python -m scripts.run_all` (see below).
+(GitHub Release asset): fetch them with a checksum check,
+`python -m scripts.fetch_release --only models`, or train them once with
+`python -m scripts.run_all` (see below).
 
 ```powershell
 python -m scripts.demo
@@ -172,8 +186,10 @@ plays one simulated hour per second inside a real haze episode and opens the das
 3. An instant jump is flagged and nulled by the edge filter (`rate_jump`) - that is the edge doing its
    job; use `ramp` for a realistic pollution rise, or switch the filter off to see the damage.
 
-`python -m scripts.demo --offline` opens the dashboard on a recorded SQLite file without a broker
-(controls are disabled); `python -m scripts.demo --smoke` is a 10-second end-to-end self test.
+**No data and no models needed:** `python -m scripts.fetch_release --only demo` downloads a recorded run
+(a haze episode with interventions and the q10-q90 band), and
+`python -m scripts.demo --offline` opens the dashboard on it without a broker (controls are
+disabled). `python -m scripts.demo --smoke` is a 10-second end-to-end self test.
 
 ## Reproduce the results
 
@@ -223,8 +239,10 @@ The broker integration job on Ubuntu is currently failing and not required (open
   the full specified grid with 3 repetitions; the ready-made scenarios ran once each, and the
   paired edge on / off comparison covers 3 fault windows per fault type (no significance tests).
 - At 3600x (one simulated hour per second) the predictor falls behind when data is lost (it waits
-  500 ms for a missing station) or a device stays offline; the table reports how many runs fell
-  behind.
+  500 ms for a missing station); the table reports how many runs fell behind. A device that
+  announced `offline` is no longer waited for (found by the benchmark, fixed and re-measured:
+  median warning latency with one offline device 148.9 s -> 37.0 s, no run fell behind), but a lost
+  message announces nothing, so that wait remains.
 - The command channel has no authentication (localhost only); a real deployment needs MQTT ACLs
   and TLS.
 - Models underestimate extreme pollution peaks (see `reports/tables/rq1_extreme.csv`).

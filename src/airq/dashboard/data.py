@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -61,6 +62,8 @@ def station_card(info: dict, forecast_rows: list[dict]) -> dict:
 
 def card_html(card: dict) -> str:
     """HTML of one card (large font, high contrast, status in text as well as colour)."""
+    # station names, flags and labels travel through MQTT: they are DATA, never markup
+    esc = html.escape
     b, fb = card["band"], card["forecast6_band"]
     last = "—" if card["last_pm25"] is None else f"{card['last_pm25']:.0f}"
     f6 = "—" if card["forecast6"] is None else f"{card['forecast6']:.0f}"
@@ -73,17 +76,18 @@ def card_html(card: dict) -> str:
         else ""
     )
     flags = (
-        f"<div style='font-size:0.8em'>kalite: {', '.join(card['flags'])}</div>"
+        f"<div style='font-size:0.8em'>kalite: {esc(', '.join(card['flags']))}</div>"
         if card["flags"]
         else ""
     )
     return (
         f"<div style='border:3px solid {b['color']};border-radius:8px;"
         "padding:8px 10px;margin-bottom:8px'>"
-        f"<div style='font-size:1.15em;font-weight:700'>{card['station']} "
+        f"<div style='font-size:1.15em;font-weight:700'>{esc(str(card['station']))} "
         f"<span style='font-size:0.75em;font-weight:400'>{dot}</span></div>"
         f"<div style='background:{b['color']};color:{b['text']};padding:4px 8px;border-radius:4px'>"
-        f"<span style='font-size:1.8em;font-weight:800'>{last}</span> µg/m³ · {b['label']}</div>"
+        f"<span style='font-size:1.8em;font-weight:800'>{last}</span> "
+        f"µg/m³ · {esc(b['label'])}</div>"
         f"<div style='margin-top:4px'>6 saat sonra: <b style='background:{fb['color']};"
         f"color:{fb['text']};padding:0 6px;border-radius:3px'>{f6} µg/m³</b></div>"
         f"{badge}{flags}</div>"
