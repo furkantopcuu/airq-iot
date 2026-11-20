@@ -5,8 +5,8 @@ base_url: https://github.com/furkantopcuu/airq-iot/releases/download
 assets:
   airq_models.zip:
     kind: models            # LightGBM text models, manifest, hyper-parameters, thresholds -> models/
-    sha256: 104e61dc365a2e1086b0d694134ec6870a9312db4ad69c0ef643fda8b0ee4b33
+    sha256: 104e61dc365a2e1086b0d694134ec6870a9312db4ad69c0ef643fda8b0ee4b33  # pragma: allowlist secret (public file checksum)
   demo_recorded.db:
     kind: demo              # recorded SQLite for `python -m scripts.demo --offline`
     dest: data/demo_recorded.db
-    sha256: 4703e7140e61b592a664c235b27a85a4efa7993d1adbd16b002bd890d320d5d4
+    sha256: 4703e7140e61b592a664c235b27a85a4efa7993d1adbd16b002bd890d320d5d4  # pragma: allowlist secret (public file checksum)

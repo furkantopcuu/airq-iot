@@ -268,7 +268,7 @@ def t_rq4_warning(tables: Path) -> pd.DataFrame:
 
 def t_scenarios_ab(tables: Path) -> pd.DataFrame:
     """Paired runs: the same fault, edge filter off and on; positive difference = it helped."""
-    from airq.pipelines.scenarios import paired_differences
+    from airq.eval.paired import paired_differences
 
     d = paired_differences(_read(tables, "scenarios_ab"))
     rows = []

@@ -110,7 +110,7 @@ def make_all(cfg: dict) -> tuple[list, dict[str, str]]:
 
 def scenarios_ab(cfg: dict) -> list:
     """Figure 12 from the paired scenario runs (run after scripts.run_scenarios --ab)."""
-    from airq.pipelines.scenarios import paired_differences
+    from airq.eval.paired import paired_differences
 
     paths = resolve_paths(cfg["paths"])
     f = paths["reports"] / "tables" / "scenarios_ab.csv"
