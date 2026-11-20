@@ -278,6 +278,43 @@ for p in rq3b(cfg):
         ],
     )
 
+    _nb(
+        "06_figures_tables",
+        "06 · Figures and tables",
+        "Builds every paper figure (vector PDF + 200 dpi PNG) and every LaTeX / Markdown table "
+        "from what the earlier notebooks wrote to reports/. Anything whose inputs are missing is "
+        "skipped with a note. The RQ3a system benchmark and the scenario runs exist only after a "
+        "LOCAL run (broker, device fleet); import them with scripts.import_artifacts and re-run "
+        "this notebook.",
+        "about 1 min",
+        [
+            new_code_cell(
+                """from IPython.display import Image, display
+from airq.pipelines.figures import make_all
+
+made, skipped = make_all(cfg)
+for stage, why in skipped.items():
+    print(f"skipped {stage}: {why}")
+for p in made:
+    if p.suffix == ".png":
+        display(Image(filename=str(p)))
+"""
+            ),
+            new_code_cell(
+                """from IPython.display import Markdown, display
+from airq.env import resolve_home
+from airq.pipelines.tables import build_all
+
+made_tables = build_all(cfg)  # paper/tables/*.tex and *.md from reports/tables/*.csv
+for name, files in made_tables.items():
+    display(Markdown(f"**{name}**\\n\\n" + files[1].read_text(encoding="utf-8")))
+print("LaTeX tables in", resolve_home() / "paper" / "tables")
+"""
+            ),
+            new_code_cell(EXPORT),
+        ],
+    )
+
 
 if __name__ == "__main__":
     build()

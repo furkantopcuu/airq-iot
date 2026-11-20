@@ -411,3 +411,118 @@ def rq3a_system(agg: pd.DataFrame, out_dir: Path, name: str = "rq3a_system") -> 
     c.legend(frameon=False, fontsize=7)
     fig.tight_layout()
     return save(fig, out_dir, name)
+
+
+def architecture(out_dir: Path, name: str = "architecture") -> list[Path]:
+    """Fig. 1: hub-and-spoke architecture around the MQTT broker, drawn from code.
+
+    Every component talks to the broker only; the database is written by ingest / predictor and
+    read by the API; the dashboard talks to the API over HTTP. Arrow labels name the topic family
+    (airq/raw, airq/edge, airq/warnings, airq/cmd, airq/cmd/ack; see iot/topics.py for QoS).
+    Dashed arrows are the control path (Senaryo Kontrol): API -> cmd -> devices, fleet, edge -> ack.
+    """
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+
+    apply_style()
+    fig, ax = plt.subplots(figsize=(FULL_W, 4.1))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 63)
+    ax.axis("off")
+
+    def box(x, y, w, h, text, color):
+        ax.add_patch(
+            FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.35", fc=color, ec="black", lw=0.8)
+        )
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=7)
+
+    def arrow(p, q, dashed=False, both=False):
+        ax.add_patch(
+            FancyArrowPatch(
+                p, q, arrowstyle="<|-|>" if both else "-|>", mutation_scale=8, lw=0.9,
+                ls="--" if dashed else "-", color="black",
+            )
+        )  # fmt: skip
+
+    def label(x, y, text, ha="left"):
+        ax.text(x, y, text, ha=ha, va="center", fontsize=6.5, style="italic")
+
+    top, bar0, bar1 = 40, 23, 30
+    box(1, top, 17, 14, "Virtual sensors\n12 stations\nreplay + netem", OKABE_ITO[5])
+    box(22, top, 17, 14, "Edge gateway\nvalidate, quality\nflags, seq, filter", OKABE_ITO[1])
+    box(43, top, 15, 14, "Ingest\n(single\nwriter)", OKABE_ITO[2])
+    box(62, top, 17, 14, "Predictor\nLightGBM h=1/6/24\n+ warning rule", OKABE_ITO[2])
+    ax.add_patch(
+        FancyBboxPatch((1, bar0), 78, bar1 - bar0, boxstyle="round,pad=0.35", fc="#F0F0F0",
+                       ec="black", lw=0.8)
+    )  # fmt: skip
+    ax.text(40, (bar0 + bar1) / 2, "MQTT broker (Mosquitto / amqtt)   QoS 1 · retained · LWT",
+            ha="center", va="center", fontsize=7.5)  # fmt: skip
+    lo, hi = bar1 + 0.6, top - 0.5
+    arrow((5, hi), (5, lo))  # sensors publish raw telemetry
+    label(5.8, 35.5, "raw")
+    arrow((13, lo), (13, hi), dashed=True)  # sensors receive cmd
+    label(13.8, 35.5, "cmd")
+    arrow((25, lo), (25, hi))  # edge subscribes raw
+    label(25.8, 35.5, "raw")
+    arrow((31, hi), (31, lo))  # edge publishes validated telemetry
+    label(31.8, 35.5, "edge")
+    arrow((37.5, lo), (37.5, hi), dashed=True)  # edge receives cmd/edge
+    label(38.3, 35.5, "cmd")
+    arrow((50.5, lo), (50.5, hi))  # ingest subscribes edge, status, cmd, ack
+    label(51.3, 35.5, "edge, status,\ncmd, ack")
+    arrow((66, lo), (66, hi))  # predictor subscribes edge telemetry
+    label(66.8, 35.5, "edge")
+    arrow((74, hi), (74, lo))  # predictor publishes warnings
+    label(74.8, 35.5, "warnings")
+    # database (written by ingest and predictor, read by the API)
+    box(84, 5, 15, 50, "SQLite\n(WAL)\n\nreadings\npredictions\nwarnings\ninterventions\n"
+        "device_status", "#DDDDDD")  # fmt: skip
+    arrow((79.6, 47), (83.4, 47))
+    ax.plot([50.5, 50.5, 91.5, 91.5], [54.5, 59.5, 59.5, 55.8], color="black", lw=0.9)
+    arrow((91.5, 56.8), (91.5, 55.7))  # arrow head of the ingest -> SQLite route above the boxes
+    label(70, 61, "writes", ha="center")
+    # serving layer
+    box(43, 4, 17, 13, "Streamlit\nSenaryo Kontrol\n+ live monitoring", OKABE_ITO[4])
+    box(63, 4, 16, 13, "FastAPI\nread + control", OKABE_ITO[4])
+    arrow((83.4, 10.5), (79.6, 10.5))
+    label(81.5, 13, "read", ha="center")
+    arrow((62.4, 10.5), (60.6, 10.5), both=True)
+    label(61.5, 18.8, "HTTP", ha="center")
+    arrow((68, 17.6), (68, bar0 - 0.6), dashed=True)  # API publishes cmd
+    label(68.8, 20.4, "cmd")
+    arrow((75, bar0 - 0.6), (75, 17.6), dashed=True)  # API receives ack
+    label(75.8, 20.4, "ack")
+    ax.text(1, 1.2, "solid: data path   dashed: control path   labels: airq/<label>/... topic "
+            "families", fontsize=6.5, va="center")  # fmt: skip
+    return save(fig, out_dir, name)
+
+
+def scenarios_edge(results: list[dict], out_dir: Path, name: str = "scenarios_edge") -> list[Path]:
+    """Fig. 10: live fault scenarios with the edge filter off vs on (reports/scenarios/*.json).
+
+    Forecast error against the CLEAN recording in the 6 h after the fault started (h=1 and h=6).
+    One run per scenario (no variance); the two windows are not paired.
+    """
+    apply_style()
+    wanted = [("sensor_sicramasi", "spike (k=8 σ, 3 h)"), ("sensor_takilmasi", "stuck (12 h)")]
+    by_name = {r["scenario"]: r for r in results}
+    panels = [(by_name[n], title) for n, title in wanted if n in by_name]
+    if not panels:
+        raise FileNotFoundError("scenario results not found; run scripts.run_scenarios")
+    fig, axes = plt.subplots(1, len(panels), figsize=(FULL_W, 2.7), squeeze=False)
+    for ax, (res, title) in zip(axes[0], panels, strict=False):
+        rows = {r["edge_filter"]: r for r in res["scorecard"] if r["kind"] == "fault"}
+        hs = ("mae_next_6h_h1", "mae_next_6h_h6")
+        x = np.arange(len(hs))
+        for j, (state, lab, hatch) in enumerate((("off", "edge off", ""), ("on", "edge on", "//"))):
+            vals = [(rows.get(state) or {}).get(h) or 0.0 for h in hs]
+            ax.bar(x + (j - 0.5) * 0.36, vals, 0.36, label=lab, hatch=hatch,
+                   color=OKABE_ITO[3 if state == "off" else 0], edgecolor="white")  # fmt: skip
+            for xi, v in zip(x + (j - 0.5) * 0.36, vals, strict=False):
+                ax.text(xi, v, f"{v:.1f}", ha="center", va="bottom", fontsize=7)
+        ax.set_xticks(x, ["h = 1 h", "h = 6 h"])
+        ax.set_ylabel("MAE vs clean recording (µg/m³)")
+        ax.set_title(title)
+        ax.legend(frameon=False)
+    fig.tight_layout()
+    return save(fig, out_dir, name)

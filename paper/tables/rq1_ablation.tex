@@ -1,0 +1,14 @@
+\begin{table}[t]
+\caption{Komşu özelliği ablasyonu: M1'e göre iyileşme.}
+\label{tab:rq1_ablation}
+\centering\footnotesize
+\begin{tabular}{lrrrrrr}
+\toprule
+Model & RMSE h=1 & RMSE h=6 & RMSE h=24 & $\Delta$\% vs M1 h=1 & $\Delta$\% vs M1 h=6 & $\Delta$\% vs M1 h=24 \\
+\midrule
+M1 LightGBM (k=0) & 17.85 & 48.88 & 73.53 & 0.0 & 0.0 & 0.0 \\
+M2a LightGBM (k=3) & 16.99 & 47.89 & 73.35 & 4.8 & 2.0 & 0.3 \\
+M2b LightGBM (k=11) & 17.08 & 46.60 & 73.29 & 4.3 & 4.7 & 0.3 \\
+\bottomrule
+\end{tabular}
+\end{table}

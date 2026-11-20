@@ -1,0 +1,164 @@
+{
+  "generated_at": "2026-11-20T12:05:00",
+  "tables": {
+    "dataset": {
+      "source": [
+        "reports/tables/dataset_summary.csv"
+      ],
+      "caption_en": "Beijing multi-site dataset summary (PM2.5, µg/m³).",
+      "rows": 13,
+      "columns": [
+        "Station",
+        "Rows",
+        "PM2.5 missing (%)",
+        "Mean",
+        "Median",
+        "P95"
+      ]
+    },
+    "rq1_main": {
+      "source": [
+        "reports/tables/rq1_main.csv"
+      ],
+      "caption_en": "Test-period forecast error (RMSE, µg/m³) and improvement over persistence.",
+      "rows": 6,
+      "columns": [
+        "Model",
+        "RMSE h=1",
+        "RMSE h=6",
+        "RMSE h=24",
+        "Δ% vs B0 h=1",
+        "Δ% vs B0 h=6",
+        "Δ% vs B0 h=24"
+      ]
+    },
+    "rq1_ablation": {
+      "source": [
+        "reports/tables/rq1_ablation.csv"
+      ],
+      "caption_en": "Neighbour-feature ablation: improvement over M1.",
+      "rows": 3,
+      "columns": [
+        "Model",
+        "RMSE h=1",
+        "RMSE h=6",
+        "RMSE h=24",
+        "Δ% vs M1 h=1",
+        "Δ% vs M1 h=6",
+        "Δ% vs M1 h=24"
+      ]
+    },
+    "rq1_loso": {
+      "source": [
+        "reports/tables/rq1_loso.csv"
+      ],
+      "caption_en": "Leave-one-station-out versus in-sample (mean over stations).",
+      "rows": 3,
+      "columns": [
+        "h",
+        "RMSE LOSO",
+        "RMSE in-sample",
+        "Δ% vs B0 LOSO",
+        "Δ% vs B0 in-sample",
+        "Stations"
+      ]
+    },
+    "rq1_extreme": {
+      "source": [
+        "reports/tables/rq1_extreme.csv"
+      ],
+      "caption_en": "RMSE on extreme targets (target ≥ train p95), µg/m³.",
+      "rows": 6,
+      "columns": [
+        "Model",
+        "RMSE h=1",
+        "RMSE h=6",
+        "RMSE h=24"
+      ]
+    },
+    "rq2_warning": {
+      "source": [
+        "reports/tables/rq2_warning.csv"
+      ],
+      "caption_en": "Early warning on the test period with δ chosen on validation (specified grid).",
+      "rows": 12,
+      "columns": [
+        "θ",
+        "h",
+        "Method",
+        "δ",
+        "Precision",
+        "Recall",
+        "F2",
+        "PR-AUC",
+        "False alarm"
+      ]
+    },
+    "rq2_haze": {
+      "source": [
+        "reports/tables/rq2_haze.csv"
+      ],
+      "caption_en": "Regional haze episodes: recall and lead time.",
+      "rows": 16,
+      "columns": [
+        "h",
+        "Method",
+        "Episodes",
+        "Event recall",
+        "Lead median (h)",
+        "Horizon-matched recall",
+        "Horizon-matched lead (h)"
+      ]
+    },
+    "rq3a": {
+      "source": [
+        "reports/tables/rq3a_bench.csv"
+      ],
+      "caption_en": "RQ3a: live-system measurements under network impairment (reduced plan).",
+      "rows": 15,
+      "columns": [
+        "Speed (×)",
+        "Loss (%)",
+        "Delay (ms)",
+        "Offline",
+        "Reps",
+        "PDR",
+        "DB p50 (ms)",
+        "DB p95 (ms)",
+        "Msg/s",
+        "Δ RMSE h=1"
+      ]
+    },
+    "rq3b": {
+      "source": [
+        "reports/tables/rq3b_robustness.csv"
+      ],
+      "caption_en": "RQ3b: RMSE increase caused by faulty inputs, edge filter off vs on.",
+      "rows": 9,
+      "columns": [
+        "Method",
+        "h",
+        "RMSE clean",
+        "Damage, edge off",
+        "Damage, edge on",
+        "Recovered (%)"
+      ]
+    },
+    "scenarios": {
+      "source": [
+        "reports/tables/scenarios_summary.csv"
+      ],
+      "caption_en": "Scenario hypotheses and what was measured.",
+      "rows": 11,
+      "columns": [
+        "Scenario",
+        "Item",
+        "Metric",
+        "Expected",
+        "Reference",
+        "Measured",
+        "Verdict"
+      ]
+    }
+  }
+}

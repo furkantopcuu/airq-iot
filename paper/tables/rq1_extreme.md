@@ -1,0 +1,8 @@
+| Model | RMSE h=1 | RMSE h=6 | RMSE h=24 |
+|---|---|---|---|
+| B0 persistence | 40.5 | 117.2 | 171.1 |
+| B1 seasonal naive | 171.1 | 171.1 | 171.1 |
+| B2 ridge (k=0) | 40.8 | 130.7 | 211.6 |
+| M1 LightGBM (k=0) | 43.8 | 131.2 | 218.1 |
+| M2a LightGBM (k=3) | 41.1 | 126.8 | 216.5 |
+| M2b LightGBM (k=11) | 41.4 | 124.4 | 216.3 |

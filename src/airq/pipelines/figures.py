@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 
 from airq.env import resolve_paths
@@ -55,3 +57,40 @@ def rq3a(cfg: dict) -> list:
     paths = resolve_paths(cfg["paths"])
     t, out = paths["reports"] / "tables", paths["reports"] / "figures"
     return list(figures.rq3a_system(pd.read_csv(t / "rq3a_bench.csv"), out))
+
+
+def architecture(cfg: dict) -> list:
+    """Figure 1 (drawn from code; needs no data)."""
+    return list(figures.architecture(resolve_paths(cfg["paths"])["reports"] / "figures"))
+
+
+def scenarios(cfg: dict) -> list:
+    """Figure 10 from the stored scenario runs (run after scripts.run_scenarios)."""
+    import json
+
+    paths = resolve_paths(cfg["paths"])
+    runs = [
+        json.loads(p.read_text(encoding="utf-8"))
+        for p in sorted((paths["reports"] / "scenarios").glob("*.json"))
+    ]
+    return list(figures.scenarios_edge(runs, paths["reports"] / "figures"))
+
+
+def make_all(cfg: dict) -> tuple[list, dict[str, str]]:
+    """Every figure whose inputs exist. Returns (files written, {stage: why it was skipped})."""
+    made: list = []
+    skipped: dict[str, str] = {}
+    for name, fn in (
+        ("architecture", architecture),
+        ("eda", eda),
+        ("rq1", rq1),
+        ("rq2", rq2),
+        ("rq3b", rq3b),
+        ("rq3a", rq3a),
+        ("scenarios", scenarios),
+    ):
+        try:
+            made += fn(cfg)
+        except FileNotFoundError as exc:
+            skipped[name] = f"missing input: {Path(str(exc)).name or exc}"
+    return made, skipped

@@ -1,0 +1,22 @@
+\begin{table}[t]
+\caption{Hazır senaryoların hipotezleri ve gerçek sonuçları.}
+\label{tab:scenarios}
+\centering\footnotesize
+\begin{tabular}{llllrll}
+\toprule
+Scenario & Item & Metric & Expected & Reference & Measured & Verdict \\
+\midrule
+ag\_bozulmasi & net-degraded & delivery\_ratio & less than & 0.95 & 0.88 & confirmed \\
+ag\_bozulmasi & net-degraded & latency\_p95\_ms & greater than & 250.00 & 318.00 & confirmed \\
+bolgesel\_artis & regional-ramp & warned & true &  & True & confirmed \\
+cihaz\_kopmasi & three-offline & min\_n\_neighbors & less than & 11.00 & 8.00 & confirmed \\
+gercek\_haze\_replay & haze-replay & warned & true &  & True & confirmed \\
+gercek\_haze\_replay & haze-replay & lead\_time\_h & greater than & 0.00 & 22.00 & confirmed \\
+sensor\_sicramasi & spike-edge-off & peak\_forecast\_h6 & greater than & 54.00 & 87.69 & confirmed \\
+sensor\_sicramasi & spike-edge-off & warned & true &  & True & confirmed \\
+sensor\_takilmasi & stuck-edge-off & mae\_next\_6h\_h6 & greater than & 12.57 & 10.54 & refuted \\
+yerel\_artis & local-ramp & warned & true &  & True & confirmed \\
+yerel\_artis & neighbor-huairou & peak\_forecast\_h6 & less than & 101.91 & 39.03 & confirmed \\
+\bottomrule
+\end{tabular}
+\end{table}

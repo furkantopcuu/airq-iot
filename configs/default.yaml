@@ -23,7 +23,7 @@ forecast:
   lgbm: {objective: regression_l2, learning_rate: 0.05, num_leaves: 63, min_child_samples: 50,
          feature_fraction: 0.8, bagging_fraction: 0.8, bagging_freq: 1, lambda_l2: 1.0,
          n_estimators: 3000, early_stopping: 100, deterministic: true, force_row_wise: true, num_threads: 0}
-  optuna_trials: 40
+  optuna_trials: 20               # user decision 2026-11-19 (spec allows <= 40); see docs/KARARLAR.md
   quantiles: [0.1, 0.5, 0.9]
   sanity: {rmse_ref: {1: 20.0, 6: 52.0, 24: 81.0}, max_better_ratio: 0.25, max_r2_h24: 0.8}
 warning:
@@ -62,5 +62,15 @@ bench:
 colab:
   quick: {stations: [Dongsi, Huairou], test_months: 2, optuna: false, seeds: [0]}
 demo:
-  start_ts: null     # 24 h before a regional haze episode in episodes_test.csv; fill on day 15
-  scenarios: [gercek_haze_replay, sensor_takilmasi, cihaz_kopmasi, ag_bozulmasi]
+  # scripts/demo.py (spec 12.2): start inside the real haze-replay window (= the window of
+  # configs/scenarios/gercek_haze_replay.yaml), run the 240 h predictor warm-up fast, then play at
+  # `speedup` (3600 = 1 s per simulated hour). The planned flow is deterministic.
+  start: "2016-12-23 16:00"
+  end: "2017-01-06 15:00"
+  warmup_h: 240
+  warmup_speedup: 20000
+  speedup: 3600
+  api_port: 8000
+  dashboard_port: 8501
+  scenario_flow: [gercek_haze_replay, sensor_takilmasi, cihaz_kopmasi, ag_bozulmasi]
+

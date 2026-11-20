@@ -44,7 +44,7 @@ def scenario_window(sc: Scenario) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timest
     return start, zero, zero + (sc.duration_h + TAIL_H) * HOUR
 
 
-def _sim_clock(db_path: Path):
+def sim_clock(db_path: Path):
     def clock():
         if not db_path.exists():
             return None
@@ -103,7 +103,7 @@ def run_scenario(
     ctl = Controller("127.0.0.1", port, client_id="scenario-runner")
     ctl.start()
     player = ScenarioPlayer(sc, ctl, stations, zero_ts=zero)
-    thread = PlayerThread(player, _sim_clock(db_path), poll_s=0.05)
+    thread = PlayerThread(player, sim_clock(db_path), poll_s=0.05)
     t0 = time.monotonic()
     thread.start()
     fleet.wait()

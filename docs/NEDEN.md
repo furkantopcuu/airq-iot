@@ -228,3 +228,17 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Projede nerede: `configs/scenarios/`, `src/airq/scenarios/`, `src/airq/server/scorecard.py`, `src/airq/server/truth.py`, `scripts/run_scenarios.py`
 - Sunumda tek cümle: Her senaryoda önce ne olmasını beklediğimizi yazdık, sonra gerçek sistemde çalıştırıp ölçtük; 11 beklentiden biri çürüdü ve onu da olduğu gibi raporladık.
 
+### Tek komutla demo (`demo.py`) ve tek komutla yeniden üretim (`run_all.py`)
+- Ne: `demo.py` broker, edge, ingest, predictor, cihaz filosu, API ve panoyu tek komutla ayağa kaldırır, ısınmayı hızla geçip canlı akışa girer, Ctrl+C ile temiz kapatır. `run_all.py` ham veriden tüm tabloları ve şekilleri sırayla üretir; bitmiş aşamaları atlar ve sonunda her çıktının varlığını doğrular.
+- Neden: Jüri önünde onlarca komut yazmak yerine tek komut ve ısınma beklemeden başlayan bir akış gerekir; her servis ayrı süreç olduğu için gerçek dağıtıma benzer ve biri çökerse hangisi olduğu logdan görünür. Yeniden üretim için tek giriş noktası, sonuçların "benim makinemde çalıştı"dan öteye geçmesini sağlar; ayrı bir `--home` içinde çalıştığı için depodaki gerçek sonuçları kazara ezmez, test setini koruyan kilit de her home için ayrıdır.
+- Alternatifler ve neden seçilmedi: Docker Compose (Windows'ta ek kurulum ve ağ ayarı, demo makinesinde risk), Makefile (Windows'ta standart değil), her aşamayı elle çalıştırmak (sıra hatası ve unutulan aşama riski).
+- Projede nerede: `src/airq/pipelines/demo.py`, `src/airq/pipelines/run_all.py`, `scripts/demo.py`, `scripts/run_all.py`
+- Sunumda tek cümle: Tek komutla bütün sistemi açıyoruz; sonuçların hepsi de tek komutla ham veriden yeniden üretilebiliyor.
+
+### Sonuç tablolarını koddan üretmek (`make_tables`)
+- Ne: Makaledeki ve README'deki tüm sonuç tabloları, `reports/tables/*.csv` dosyalarından otomatik LaTeX ve Markdown'a çevrilir.
+- Neden: Elle yazılan her sayı bir yanlış yazım riskidir ve sonuçla makale arasındaki bağı koparır. Tablo hücreleri CSV'den hesaplandığı için sonuç değişirse tablo da değişir; bir test hücreleri CSV ile çapraz kontrol eder.
+- Alternatifler ve neden seçilmedi: Tabloları elle Word/LaTeX'e yazmak (uydurma ve unutulan güncelleme riski).
+- Projede nerede: `src/airq/pipelines/tables.py`, `scripts/make_tables.py`
+- Sunumda tek cümle: Makaledeki her tablo doğrudan sonuç dosyalarından üretiliyor; elle yazılmış sayı yok.
+
