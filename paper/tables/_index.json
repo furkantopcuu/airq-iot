@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-20T12:05:00",
+  "generated_at": "2026-11-20T14:03:30",
   "tables": {
     "dataset": {
       "source": [
@@ -108,6 +108,43 @@
         "Lead median (h)",
         "Horizon-matched recall",
         "Horizon-matched lead (h)"
+      ]
+    },
+    "rq4_coverage": {
+      "source": [
+        "reports/tables/rq4_coverage.csv",
+        "reports/tables/rq4_calibration.csv"
+      ],
+      "caption_en": "RQ4: coverage (target 0.80), width and pinball loss of the [q10, q90] interval (test).",
+      "rows": 6,
+      "columns": [
+        "h",
+        "Interval",
+        "c",
+        "Coverage",
+        "Coverage, extreme",
+        "Mean width",
+        "Pinball q10",
+        "Pinball q50",
+        "Pinball q90"
+      ]
+    },
+    "rq4_warning": {
+      "source": [
+        "reports/tables/rq4_warning.csv"
+      ],
+      "caption_en": "RQ4: q90-based versus point-forecast warning (theta = 150, specified delta grid).",
+      "rows": 12,
+      "columns": [
+        "h",
+        "Method",
+        "δ",
+        "Precision",
+        "Recall",
+        "F2",
+        "False alarm",
+        "Horizon-matched recall",
+        "Matched lead (h)"
       ]
     },
     "rq3a": {

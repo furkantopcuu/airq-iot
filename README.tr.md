@@ -60,6 +60,40 @@ dosyasında, her teknoloji seçiminin gerekçesi [docs/NEDEN.md](docs/NEDEN.md) 
 | M2b LightGBM (k=11) | 24 h | 75.96 | 0.57 | 0.56 | 2.2 |
 <!-- /TABLE:rq3b -->
 
+**RQ4 - tahmin belirsizliği: [q10, q90] aralığının kapsaması (hedef 0,80) ve pinball kaybı; kalibrasyon katsayısı yalnızca doğrulama verisinde öğrenildi**
+
+<!-- TABLE:rq4_coverage -->
+| h | Interval | c | Coverage | Coverage, extreme | Mean width | Pinball q10 | Pinball q50 | Pinball q90 |
+|---|---|---|---|---|---|---|---|---|
+| 1 h | raw | 1.00 | 0.761 | 0.741 | 24.6 | 2.12 | 4.35 | 2.30 |
+| 1 h | calibrated | 1.10 | 0.798 | 0.774 | 27.0 | 2.12 | 4.35 | 2.29 |
+| 6 h | raw | 1.00 | 0.756 | 0.578 | 77.3 | 5.90 | 13.13 | 6.97 |
+| 6 h | calibrated | 1.10 | 0.797 | 0.621 | 85.0 | 5.88 | 13.13 | 6.93 |
+| 24 h | raw | 1.00 | 0.758 | 0.279 | 136.7 | 7.14 | 24.76 | 13.06 |
+| 24 h | calibrated | 1.05 | 0.809 | 0.321 | 143.6 | 7.18 | 24.76 | 12.94 |
+<!-- /TABLE:rq4_coverage -->
+
+**RQ4 - q90 tabanlı uyarı ve nokta tahmin tabanlı uyarı (θ = 150)**
+
+<!-- TABLE:rq4_warning -->
+| h | Method | δ | Precision | Recall | F2 | False alarm | Horizon-matched recall | Matched lead (h) |
+|---|---|---|---|---|---|---|---|---|
+| 1 h | B0 persistence | 15 | 0.817 | 0.963 | 0.930 | 0.094 | 0.72 | 0.0 |
+| 1 h | M2b LightGBM (k=11) | 10 | 0.865 | 0.955 | 0.936 | 0.070 | 0.66 | 1.0 |
+| 1 h | M3 q90 (calibrated) | 0 | 0.794 | 0.982 | 0.937 | 0.112 | 0.55 | 1.0 |
+| 1 h | M3 q90 (raw) | 0 | 0.807 | 0.979 | 0.939 | 0.108 | 0.58 | 1.0 |
+| 6 h | B0 persistence | 40 | 0.530 | 0.856 | 0.762 | 0.218 | 0.83 | 3.0 |
+| 6 h | M2b LightGBM (k=11) | 40 | 0.568 | 0.876 | 0.790 | 0.181 | 0.80 | 3.0 |
+| 6 h | M3 q90 (calibrated) | 0 | 0.484 | 0.940 | 0.791 | 0.261 | 0.87 | 4.0 |
+| 6 h | M3 q90 (raw) | 0 | 0.513 | 0.929 | 0.799 | 0.233 | 0.86 | 4.0 |
+| 24 h | B0 persistence | 40 | 0.378 | 0.613 | 0.545 | 0.218 | 0.63 | 20.0 |
+| 24 h | M2b LightGBM (k=11) | 40 | 0.482 | 0.528 | 0.518 | 0.173 | 0.52 | 21.0 |
+| 24 h | M3 q90 (calibrated) | 0 | 0.296 | 0.862 | 0.623 | 0.404 | 0.79 | 21.0 |
+| 24 h | M3 q90 (raw) | 0 | 0.309 | 0.853 | 0.631 | 0.381 | 0.79 | 21.0 |
+<!-- /TABLE:rq4_warning -->
+
+![Belirsizlik](reports/figures/rq4_uncertainty.png)
+
 **Senaryo Kontrol - çalıştırmadan önce yazılan hipotezler ve canlı sistemin gerçek tepkisi** (senaryo başına tek koşu)
 
 <!-- TABLE:scenarios -->

@@ -1,0 +1,25 @@
+{
+  "evaluated_on": "test",
+  "evaluated_at": "2026-11-20T13:52:05",
+  "k": 11,
+  "scales": {
+    "1": 1.1,
+    "6": 1.1,
+    "24": 1.05
+  },
+  "target_coverage": 0.8,
+  "train_p95": 232.0,
+  "warning_methods": [
+    "B0_persistence",
+    "M2_lgbm_k11",
+    "M3_q90_raw",
+    "M3_q90_cal"
+  ],
+  "note": "protocol fixed in docs/KARARLAR.md before the test run; c fitted on validation",
+  "warning": {
+    "n_test_exceedance_events": {
+      "75": 1467,
+      "150": 724
+    }
+  }
+}

@@ -242,3 +242,10 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Projede nerede: `src/airq/pipelines/tables.py`, `scripts/make_tables.py`
 - Sunumda tek cümle: Makaledeki her tablo doğrudan sonuç dosyalarından üretiliyor; elle yazılmış sayı yok.
 
+### Belirsizlik: LightGBM quantile modelleri ve q90 tabanlı uyarı (RQ4)
+- Ne: Tek bir sayı yerine "gerçek değer %80 olasılıkla şu aralıkta" diyen bir tahmin aralığı üretiyoruz (alt ve üst yüzde 10'luk sınırlar için ayrı modeller) ve uyarıyı üst sınıra bağlayan bir varyantı normal uyarıyla karşılaştırıyoruz.
+- Neden: Erken uyarıda kaçırmak yanlış alarmdan pahalıdır; üst sınır doğal olarak ihtiyatlıdır ve olay yakalamayı artırır. Aralığın gerçekten %80'i tutup tutmadığını ölçüyoruz; tutmuyorsa (ilk hali %76'ydı) tek bir katsayı yalnızca doğrulama verisinde öğrenilip test'e aynen uygulanır. Test'e bakmadan önce protokolü ve hipotezi yazdık, sonucu olduğu gibi raporlayıp aşırı tepelerde aralığın yetersiz kaldığını da gösterdik.
+- Alternatifler ve neden seçilmedi: Gauss varsayımlı aralık (PM2.5 dağılımı çarpık, haze'de kalın kuyruk), bootstrap toplulukları (çok daha pahalı), ayrı bir derin model (ek bağımlılık, LightGBM zaten aynı özellikleri kullanıyor).
+- Projede nerede: `src/airq/models/quantile.py`, `src/airq/pipelines/rq4.py`
+- Sunumda tek cümle: Tahminin yanına güven aralığı koyduk; aralık orta kirlilikte güvenilir ama aşırı tepelerde yetersiz, üst sınırla uyarı daha fazla olayı yakalıyor ama daha çok yanlış alarm veriyor.
+

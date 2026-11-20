@@ -1,6 +1,6 @@
 {
   "evaluated_on": "test",
-  "evaluated_at": "2026-11-19T20:47:24",
+  "evaluated_at": "2026-11-20T13:47:36",
   "stations": [
     "Aotizhongxin",
     "Changping",
@@ -18,8 +18,8 @@
   "train_p95": 232.0,
   "by_horizon_best": {
     "1": {
-      "best_rmse": 16.99371215926488,
-      "best_r2": 0.9579299554977107
+      "best_rmse": 16.991886429098688,
+      "best_r2": 0.9579389946555631
     },
     "6": {
       "best_rmse": 46.604181793327605,

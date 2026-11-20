@@ -1,0 +1,43 @@
+{
+  "evaluated_on": "test",
+  "evaluated_at": "2026-11-20T13:52:05",
+  "methods": [
+    "B0_persistence",
+    "M2_lgbm_k11",
+    "M3_q90_raw",
+    "M3_q90_cal"
+  ],
+  "n_test_exceedance_events": {
+    "75": 1467,
+    "150": 724
+  },
+  "n_test_regional_haze": 43,
+  "example": null,
+  "grids": {
+    "spec": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      30,
+      40
+    ],
+    "wide": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90,
+      100
+    ]
+  },
+  "note": "delta chosen on validation (F2); grid spec = as specified, wide = sensitivity"
+}

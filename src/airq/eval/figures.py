@@ -551,12 +551,12 @@ def rq4_uncertainty(
         for xi, v in zip(x + (j - 0.5) * 0.36, vals, strict=False):
             a.text(xi, v + 0.01, f"{v:.2f}", ha="center", fontsize=6.5)
     a.axhline(0.8, color="black", ls="--", lw=1)
-    a.text(len(hs) - 0.55, 0.81, "target 0.80", ha="right", fontsize=6.5)
     a.set_xticks(x, [f"{h} h" for h in hs])
-    a.set_ylim(0, 1.0)
+    a.set_ylim(0, 1.22)
+    a.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
     a.set_ylabel("coverage of [q10, q90]")
-    a.set_title("Coverage (test)")
-    a.legend(frameon=False, fontsize=6.5, loc="lower left")
+    a.set_title("Coverage (test), target 0.80")
+    a.legend(frameon=False, fontsize=6.5, loc="upper center", ncol=2)
     if example is not None and len(example):
         ex = example.copy()
         ex["target_ts"] = pd.to_datetime(ex["target_ts"])
@@ -575,19 +575,28 @@ def rq4_uncertainty(
         w = warn[
             (warn["grid"] == "spec") & (warn["theta"] == 150) & (warn["h"].astype(str) != "any")
         ]
-        methods = [("M2_lgbm_k11", "point (M2b)"), ("M3_q90_cal", "q90 (calibrated)")]
+        point = (
+            next(  # the point model of this run (M2b in a full run, M1 in a 2-station QUICK run)
+                (m for m in w["method"].unique() if m.startswith("M") and not m.startswith("M3")),
+                None,
+            )
+        )
+        methods = [(point, "point"), ("M3_q90_cal", "q90 (calibrated)")]
+        if point is None or "M3_q90_cal" not in set(w["method"]):
+            methods = []
         hz = sorted({int(h) for h in w["h"]})
         for j, (m, label) in enumerate(methods):
             r = w[w["method"] == m].assign(hi=lambda d: d["h"].astype(int)).set_index("hi")
             xs = np.arange(len(hz)) + (j - 0.5) * 0.36
-            c.bar(xs, [r.loc[h, "recall"] for h in hz], 0.36, label=f"{label}: recall",
+            c.bar(xs, [r.loc[h, "recall"] for h in hz], 0.36, label=f"recall, {label}",
                   color=OKABE_ITO[3 if j else 0], edgecolor="white")  # fmt: skip
-            c.plot(xs, [r.loc[h, "precision"] for h in hz], "k_" if j else "ko", ms=7,
-                   label=f"{label}: precision" if j else None)  # fmt: skip
+            c.plot(xs, [r.loc[h, "precision"] for h in hz], "D" if j else "o", color="black",
+                   mfc="white", ms=5, label=f"precision, {label}")  # fmt: skip
         c.set_xticks(np.arange(len(hz)), [f"{h} h" for h in hz])
-        c.set_ylim(0, 1.05)
+        c.set_ylim(0, 1.5)
+        c.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
         c.set_title("Warning, theta = 150")
-        c.legend(frameon=False, fontsize=5.8, loc="lower left")
+        c.legend(frameon=False, fontsize=5.6, loc="upper center", ncol=1)
     else:
         c.axis("off")
     fig.tight_layout()

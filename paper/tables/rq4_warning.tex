@@ -1,0 +1,23 @@
+\begin{table}[t]
+\caption{RQ4: q90 tabanlı uyarı ile nokta tahmin tabanlı uyarı (θ = 150, belirtilen δ ızgarası).}
+\label{tab:rq4_warning}
+\centering\footnotesize
+\begin{tabular}{rlrrrrrrr}
+\toprule
+h & Method & δ & Precision & Recall & F2 & False alarm & Horizon-matched recall & Matched lead (h) \\
+\midrule
+1 h & B0 persistence & 15 & 0.817 & 0.963 & 0.930 & 0.094 & 0.72 & 0.0 \\
+1 h & M2b LightGBM (k=11) & 10 & 0.865 & 0.955 & 0.936 & 0.070 & 0.66 & 1.0 \\
+1 h & M3 q90 (calibrated) & 0 & 0.794 & 0.982 & 0.937 & 0.112 & 0.55 & 1.0 \\
+1 h & M3 q90 (raw) & 0 & 0.807 & 0.979 & 0.939 & 0.108 & 0.58 & 1.0 \\
+6 h & B0 persistence & 40 & 0.530 & 0.856 & 0.762 & 0.218 & 0.83 & 3.0 \\
+6 h & M2b LightGBM (k=11) & 40 & 0.568 & 0.876 & 0.790 & 0.181 & 0.80 & 3.0 \\
+6 h & M3 q90 (calibrated) & 0 & 0.484 & 0.940 & 0.791 & 0.261 & 0.87 & 4.0 \\
+6 h & M3 q90 (raw) & 0 & 0.513 & 0.929 & 0.799 & 0.233 & 0.86 & 4.0 \\
+24 h & B0 persistence & 40 & 0.378 & 0.613 & 0.545 & 0.218 & 0.63 & 20.0 \\
+24 h & M2b LightGBM (k=11) & 40 & 0.482 & 0.528 & 0.518 & 0.173 & 0.52 & 21.0 \\
+24 h & M3 q90 (calibrated) & 0 & 0.296 & 0.862 & 0.623 & 0.404 & 0.79 & 21.0 \\
+24 h & M3 q90 (raw) & 0 & 0.309 & 0.853 & 0.631 & 0.381 & 0.79 & 21.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
