@@ -40,6 +40,7 @@ class Stage:
     args: tuple[str, ...] = ()
     outputs: tuple[str, ...] = ()  # relative to the home; a trailing "*" counts files by prefix
     quick_args: tuple[str, ...] = ()  # appended in --quick mode
+    quick_optional: tuple[str, ...] = ()  # outputs a QUICK run legitimately may not produce
     skip_in_quick: bool = False
     group: str = "core"  # core | system (long, needs broker + models)
     est: str = ""
@@ -134,8 +135,11 @@ def stages(trials: int = OPTUNA_TRIALS) -> list[Stage]:
             "make_figures",
             (),
             tuple(f"reports/figures/{f}.png" for f in FIGURES),
+            quick_optional=(
+                "reports/figures/rq2_haze_example.png",
+            ),  # no regional haze with 2 stations
             est="1 min",
-        ),  # fmt: skip
+        ),
         Stage(
             "tables",
             "make_tables",
@@ -146,9 +150,11 @@ def stages(trials: int = OPTUNA_TRIALS) -> list[Stage]:
     ]
 
 
-def missing_outputs(stage: Stage, home: Path) -> list[str]:
+def missing_outputs(stage: Stage, home: Path, quick: bool = False) -> list[str]:
     out = []
     for rel in stage.outputs:
+        if quick and rel in stage.quick_optional:
+            continue
         p = home / rel
         if rel == "data/raw/beijing":  # the 12 station files
             if len(list(p.rglob("PRSA_Data_*.csv"))) < 12 if p.exists() else True:
@@ -183,7 +189,7 @@ def run_stage(stage: Stage, home: Path, quick: bool, force: bool, log_dir: Path)
     seconds = time.monotonic() - t0
     if proc.returncode != 0:
         return StageResult(stage.name, "failed", seconds, note=f"exit {proc.returncode}, see {log}")
-    return StageResult(stage.name, "ran", seconds, missing_outputs(stage, home))
+    return StageResult(stage.name, "ran", seconds, missing_outputs(stage, home, quick))
 
 
 def plan(quick: bool, with_system: bool, skip: set[str], only: set[str] | None) -> list[Stage]:
@@ -224,7 +230,7 @@ def run_all(
     results: list[StageResult] = []
     log(f"home: {home}   mode: {'QUICK' if quick else 'FULL'}   stages: {[s.name for s in chosen]}")
     for s in chosen:
-        missing = missing_outputs(s, home)
+        missing = missing_outputs(s, home, quick)
         if check_only:
             res = StageResult(s.name, "missing" if missing else "cached", 0.0, missing)
         elif dry_run:

@@ -8,6 +8,7 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
+from paho.mqtt.client import topic_matches_sub
 
 from airq.devices.fleet import run_fleet
 from airq.edge.gateway import run as run_edge
@@ -90,7 +91,14 @@ class Fleet:
 def _collect(broker, filters, cid):
     got = []
     client = make_client(cid)
-    client.on_message = lambda _c, _u, m: got.append((m.topic, m.payload))
+
+    def on_message(
+        _c, _u, m
+    ):  # drop amqtt's loosely matched retained messages (see test_mqtt_devices)
+        if any(topic_matches_sub(f, m.topic) for f in filters):
+            got.append((m.topic, m.payload))
+
+    client.on_message = on_message
     connect_blocking(client, *broker)
     for f in filters:
         client.subscribe(f, qos=1)

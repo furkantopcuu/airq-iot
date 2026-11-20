@@ -88,3 +88,15 @@ def test_a_failing_stage_is_reported_with_its_log_and_stops_the_run(tmp_path):
     assert res.status == "failed" and "see" in res.note
     assert (tmp_path / "logs" / "boom.log").exists()
     assert not ra.ok([res])
+
+
+def test_a_quick_run_may_lack_the_haze_example_figure_but_a_full_run_may_not(tmp_path):
+    figures = next(s for s in ra.stages() if s.name == "figures")
+    for rel in figures.outputs:
+        if rel not in figures.quick_optional:
+            (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / rel).write_text("x")
+    assert ra.missing_outputs(figures, tmp_path, quick=True) == []
+    assert ra.missing_outputs(figures, tmp_path, quick=False) == [
+        "reports/figures/rq2_haze_example.png"
+    ]

@@ -9,6 +9,7 @@ import time
 import numpy as np
 import pandas as pd
 import pytest
+from paho.mqtt.client import topic_matches_sub
 
 from airq.devices.fleet import run_fleet
 from airq.devices.virtual_sensor import VirtualSensor
@@ -33,7 +34,10 @@ def _subscriber(broker, filters, client_id="test-sub"):
     client = make_client(client_id)
 
     def on_message(_c, _u, msg):
-        received.append((msg.topic, msg.payload, msg.retain))
+        # amqtt also hands retained messages of OTHER topics to wildcard subscribers (its retained
+        # matching is loose); a real subscription filter would never match them: drop them here.
+        if any(topic_matches_sub(f, msg.topic) for f in filters):
+            received.append((msg.topic, msg.payload, msg.retain))
 
     client.on_message = on_message
     connect_blocking(client, *broker)
