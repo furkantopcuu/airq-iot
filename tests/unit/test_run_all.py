@@ -24,8 +24,10 @@ def fabricate(home: Path, stage: ra.Stage) -> None:
 
 def test_every_stage_points_at_an_existing_script_in_dependency_order():
     names = [s.name for s in ra.stages()]
-    assert names == ["download", "dataset", "edge", "forecast_v0", "tuning", "final", "warning",
-                     "robustness", "system", "scenarios", "figures", "tables"]  # fmt: skip
+    assert names == [
+        "download", "dataset", "edge", "forecast_v0", "tuning", "final", "warning",
+        "robustness", "uncertainty", "system", "scenarios", "figures", "tables",
+    ]  # fmt: skip
     for s in ra.stages():
         assert (REPO / "scripts" / f"{s.script}.py").exists(), s.script
         assert s.outputs, s.name

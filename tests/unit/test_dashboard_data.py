@@ -119,3 +119,27 @@ def test_numeric_where_possible_converts_only_fully_numeric_columns():
         out["h"].tolist() == [1, 6] and out["rmse"].iloc[0] == 19.6 and out["rmse"].isna().iloc[1]
     )
     assert out["model"].tolist() == ["B0", "M2"] and out["mix"].tolist() == ["1", "x"]
+
+
+def test_station_figure_draws_the_q10_q90_band_only_when_the_forecast_has_one():
+    readings = [_reading(h, 50.0 + h) for h in range(10)]
+    plain = [_fc(8, 6, 85), _fc(9, 6, 90)]
+    plain_names = [t.name for t in dash.station_figure(readings, plain, []).data]
+    assert "q10-q90 aralığı (6 sa)" not in plain_names
+    banded = [{**r, "q10": r["yhat"] - 15, "q90": r["yhat"] + 25} for r in plain]
+    fig = dash.station_figure(readings, banded, [])
+    band = next(t for t in fig.data if t.name == "q10-q90 aralığı (6 sa)")
+    upper = fig.data[list(fig.data).index(band) - 1]
+    assert band.fill == "tonexty" and list(band.y) == [70.0, 75.0]
+    assert list(upper.y) == [110.0, 115.0]  # q90 is the line the band fills down from
+    mixed = [{**plain[0], "q10": None, "q90": None}, banded[1]]
+    assert (
+        len(
+            next(
+                t
+                for t in dash.station_figure(readings, mixed, []).data
+                if t.name == "q10-q90 aralığı (6 sa)"
+            ).x
+        )
+        == 1
+    )  # rows without a band are skipped

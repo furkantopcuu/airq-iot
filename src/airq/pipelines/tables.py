@@ -24,6 +24,8 @@ import pandas as pd
 from airq.env import resolve_home, resolve_paths
 
 MODEL_NAMES = {
+    "M3_q90_raw": "M3 q90 (raw)",
+    "M3_q90_cal": "M3 q90 (calibrated)",
     "B0_persistence": "B0 persistence",
     "B1_seasonal_naive": "B1 seasonal naive",
     "B2_ridge_k0": "B2 ridge (k=0)",
@@ -216,6 +218,49 @@ def t_scenarios(tables: Path) -> pd.DataFrame:
     )
 
 
+def t_rq4_coverage(tables: Path) -> pd.DataFrame:
+    c = _read(tables, "rq4_coverage")
+    cal = _read(tables, "rq4_calibration").set_index("h")
+    rows = []
+    for h in sorted(c["h"].unique()):
+        for variant in ("raw", "calibrated"):
+            al = c[(c["h"] == h) & (c["variant"] == variant) & (c["subset"] == "all")].iloc[0]
+            ex = c[(c["h"] == h) & (c["variant"] == variant) & (c["subset"] != "all")].iloc[0]
+            rows.append(
+                {
+                    "h": f"{h} h",
+                    "Interval": variant,
+                    "c": fmt(cal.loc[h, "c"] if variant == "calibrated" else 1.0, 2),
+                    "Coverage": fmt(al["coverage"], 3),
+                    "Coverage, extreme": fmt(ex["coverage"], 3),
+                    "Mean width": fmt(al["mean_width"], 1),
+                    "Pinball q10": fmt(al["pinball_q10"], 2),
+                    "Pinball q50": fmt(al["pinball_q50"], 2),
+                    "Pinball q90": fmt(al["pinball_q90"], 2),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def t_rq4_warning(tables: Path) -> pd.DataFrame:
+    w = _read(tables, "rq4_warning")
+    w = w[(w["grid"] == "spec") & (w["theta"] == 150) & (w["h"].astype(str).isin(["1", "6", "24"]))]
+    w = w.assign(h=w["h"].astype(int)).sort_values(["h", "method"])
+    return pd.DataFrame(
+        {
+            "h": w["h"].map(lambda v: f"{v} h"),
+            "Method": w["method"].map(lambda m: MODEL_NAMES.get(m, m)),
+            "δ": w["delta"].map(lambda v: fmt(v, 0)),
+            "Precision": w["precision"].map(lambda v: fmt(v, 3)),
+            "Recall": w["recall"].map(lambda v: fmt(v, 3)),
+            "F2": w["f2"].map(lambda v: fmt(v, 3)),
+            "False alarm": w["false_alarm_rate"].map(lambda v: fmt(v, 3)),
+            "Horizon-matched recall": w["m_event_recall"].map(lambda v: fmt(v, 2)),
+            "Matched lead (h)": w["m_lead_median"].map(lambda v: fmt(v, 1)),
+        }
+    ).reset_index(drop=True)
+
+
 TABLES = [
     TableSpec(
         "dataset",
@@ -265,6 +310,20 @@ TABLES = [
         "Bölgesel haze epizotlarında yakalama ve öncül süre.",
         "Regional haze episodes: recall and lead time.",
         t_rq2_haze,
+    ),
+    TableSpec(
+        "rq4_coverage",
+        "rq4_coverage,rq4_calibration",
+        "RQ4: [q10, q90] aralığının kapsaması (hedef 0,80), genişliği ve pinball kaybı (test).",
+        "RQ4: coverage (target 0.80), width and pinball loss of the [q10, q90] interval (test).",
+        t_rq4_coverage,
+    ),
+    TableSpec(
+        "rq4_warning",
+        "rq4_warning",
+        "RQ4: q90 tabanlı uyarı ile nokta tahmin tabanlı uyarı (θ = 150, belirtilen δ ızgarası).",
+        "RQ4: q90-based versus point-forecast warning (theta = 150, specified delta grid).",
+        t_rq4_warning,
     ),
     TableSpec(
         "rq3a",

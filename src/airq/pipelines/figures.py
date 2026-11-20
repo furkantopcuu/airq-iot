@@ -76,6 +76,16 @@ def scenarios(cfg: dict) -> list:
     return list(figures.scenarios_edge(runs, paths["reports"] / "figures"))
 
 
+def rq4(cfg: dict) -> list:
+    """Figure 11 from the RQ4 outputs (run after scripts.run_uncertainty)."""
+    paths = resolve_paths(cfg["paths"])
+    t, out = paths["reports"] / "tables", paths["reports"] / "figures"
+    cov = pd.read_csv(t / "rq4_coverage.csv")
+    example = pd.read_csv(t / "rq4_example.csv") if (t / "rq4_example.csv").exists() else None
+    warn = pd.read_csv(t / "rq4_warning.csv") if (t / "rq4_warning.csv").exists() else None
+    return list(figures.rq4_uncertainty(cov, example, warn, out))
+
+
 def make_all(cfg: dict) -> tuple[list, dict[str, str]]:
     """Every figure whose inputs exist. Returns (files written, {stage: why it was skipped})."""
     made: list = []
@@ -87,6 +97,7 @@ def make_all(cfg: dict) -> tuple[list, dict[str, str]]:
         ("rq2", rq2),
         ("rq3b", rq3b),
         ("rq3a", rq3a),
+        ("rq4", rq4),
         ("scenarios", scenarios),
     ):
         try:

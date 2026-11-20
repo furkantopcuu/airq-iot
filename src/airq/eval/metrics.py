@@ -44,3 +44,14 @@ def summarize(y, yhat) -> dict[str, float]:
         "smape": smape(y, yhat),
         "n": int(len(_arr(y))),
     }
+
+
+def pinball(y, q, alpha: float) -> float:
+    """Mean pinball (quantile) loss of the alpha-quantile forecast q."""
+    y, q = _arr(y), _arr(q)
+    d = y - q
+    return float(np.mean(np.maximum(alpha * d, (alpha - 1.0) * d)))
+
+
+def mean_width(lo, hi) -> float:
+    return float(np.mean(_arr(hi) - _arr(lo)))

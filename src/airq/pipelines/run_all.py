@@ -27,10 +27,10 @@ from airq.env import repo_root, resolve_home
 OPTUNA_TRIALS = 20  # decision 2026-11-19 (docs/KARARLAR.md); the config carries the same number
 FIGURES = [
     "architecture", "eda_corr_missing", "rq1_horizon", "rq1_ablation_loso", "rq1_shap_groups",
-    "rq2_pr_lead", "rq2_haze_example", "rq3b_damage",
+    "rq2_pr_lead", "rq2_haze_example", "rq3b_damage", "rq4_uncertainty",
 ]  # fmt: skip
 TABLES = ["dataset", "rq1_main", "rq1_ablation", "rq1_loso", "rq1_extreme", "rq2_warning",
-          "rq2_haze", "rq3b"]  # fmt: skip
+          "rq2_haze", "rq3b", "rq4_coverage", "rq4_warning"]  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -112,6 +112,19 @@ def stages(trials: int = OPTUNA_TRIALS) -> list[Stage]:
             ("--quick",),
             est="5 min",
         ),  # fmt: skip
+        Stage(
+            "uncertainty",
+            "run_uncertainty",
+            (),
+            (
+                m + "uncertainty_test.json",
+                t + "rq4_coverage.csv",
+                t + "rq4_warning.csv",
+                "models/quantile_calibration.json",
+            ),
+            ("--quick",),
+            est="10 min",
+        ),
         Stage(
             "system",
             "run_system_bench",

@@ -526,3 +526,69 @@ def scenarios_edge(results: list[dict], out_dir: Path, name: str = "scenarios_ed
         ax.legend(frameon=False)
     fig.tight_layout()
     return save(fig, out_dir, name)
+
+
+def rq4_uncertainty(
+    cov: pd.DataFrame,
+    example: pd.DataFrame | None,
+    warn: pd.DataFrame | None,
+    out_dir: Path,
+    name: str = "rq4_uncertainty",
+) -> list[Path]:
+    """Fig. 11 (RQ4): (a) coverage of the [q10, q90] interval by horizon, raw vs calibrated;
+    (b) the interval around a haze episode (h = 6); (c) hourly recall / precision of the warning
+    when the q90 forecast replaces the point forecast (theta = 150, specified delta grid)."""
+    apply_style()
+    fig, axes = plt.subplots(1, 3, figsize=(FULL_W, 2.9), gridspec_kw={"width_ratios": [1, 1.5, 1]})
+    a, b, c = axes
+    sub = cov[cov["subset"] == "all"]
+    hs = sorted(sub["h"].unique())
+    x = np.arange(len(hs))
+    for j, (variant, hatch) in enumerate((("raw", ""), ("calibrated", "//"))):
+        vals = [sub[(sub["h"] == h) & (sub["variant"] == variant)]["coverage"].iloc[0] for h in hs]
+        a.bar(x + (j - 0.5) * 0.36, vals, 0.36, label=variant, hatch=hatch,
+              color=OKABE_ITO[j], edgecolor="white")  # fmt: skip
+        for xi, v in zip(x + (j - 0.5) * 0.36, vals, strict=False):
+            a.text(xi, v + 0.01, f"{v:.2f}", ha="center", fontsize=6.5)
+    a.axhline(0.8, color="black", ls="--", lw=1)
+    a.text(len(hs) - 0.55, 0.81, "target 0.80", ha="right", fontsize=6.5)
+    a.set_xticks(x, [f"{h} h" for h in hs])
+    a.set_ylim(0, 1.0)
+    a.set_ylabel("coverage of [q10, q90]")
+    a.set_title("Coverage (test)")
+    a.legend(frameon=False, fontsize=6.5, loc="lower left")
+    if example is not None and len(example):
+        ex = example.copy()
+        ex["target_ts"] = pd.to_datetime(ex["target_ts"])
+        b.fill_between(ex["target_ts"], ex["q10"], ex["q90"], color=OKABE_ITO[5], alpha=0.45,
+                       label="q10-q90 (calibrated)")  # fmt: skip
+        b.plot(ex["target_ts"], ex["yhat_point"], color=OKABE_ITO[0], lw=1, label="point forecast")
+        b.plot(ex["target_ts"], ex["obs_at_target"], color="black", lw=1.2, label="observed")
+        b.axhline(150, color="#555555", ls="--", lw=0.8)
+        b.set_ylabel("PM2.5 (µg/m³)")
+        b.set_title(f"{ex['station'].iloc[0]}: haze episode, h = 6 h")
+        b.tick_params(axis="x", rotation=30)
+        b.legend(frameon=False, fontsize=6.5)
+    else:
+        b.axis("off")
+    if warn is not None and len(warn):
+        w = warn[
+            (warn["grid"] == "spec") & (warn["theta"] == 150) & (warn["h"].astype(str) != "any")
+        ]
+        methods = [("M2_lgbm_k11", "point (M2b)"), ("M3_q90_cal", "q90 (calibrated)")]
+        hz = sorted({int(h) for h in w["h"]})
+        for j, (m, label) in enumerate(methods):
+            r = w[w["method"] == m].assign(hi=lambda d: d["h"].astype(int)).set_index("hi")
+            xs = np.arange(len(hz)) + (j - 0.5) * 0.36
+            c.bar(xs, [r.loc[h, "recall"] for h in hz], 0.36, label=f"{label}: recall",
+                  color=OKABE_ITO[3 if j else 0], edgecolor="white")  # fmt: skip
+            c.plot(xs, [r.loc[h, "precision"] for h in hz], "k_" if j else "ko", ms=7,
+                   label=f"{label}: precision" if j else None)  # fmt: skip
+        c.set_xticks(np.arange(len(hz)), [f"{h} h" for h in hz])
+        c.set_ylim(0, 1.05)
+        c.set_title("Warning, theta = 150")
+        c.legend(frameon=False, fontsize=5.8, loc="lower left")
+    else:
+        c.axis("off")
+    fig.tight_layout()
+    return save(fig, out_dir, name)

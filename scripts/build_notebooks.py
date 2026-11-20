@@ -273,6 +273,39 @@ for p in rq3b(cfg):
     )
 
     _nb(
+        "05_uncertainty_rq4",
+        "05 · RQ4: forecast uncertainty and q90-based warning",
+        "LightGBM quantile models (alpha 0.1 / 0.5 / 0.9) give a [q10, q90] interval per "
+        "horizon; a single widening factor is fitted on VALIDATION when the coverage is clearly "
+        "off the 0.80 target. The test split is evaluated once. The q90 forecast then replaces "
+        "the point forecast in the RQ2 warning rule. Run notebooks 02 and 03 first.",
+        "QUICK: 2-4 min",
+        [
+            new_code_cell(
+                """from airq.pipelines.rq4 import run_uncertainty
+
+summary = run_uncertainty(cfg, quick=QUICK, force=QUICK)  # full run: guarded, test is seen once
+summary["scales"]
+"""
+            ),
+            new_code_cell(
+                """import pandas as pd
+from IPython.display import Image, display
+from airq.env import resolve_paths
+from airq.pipelines.figures import rq4
+
+tables = resolve_paths(cfg["paths"])["reports"] / "tables"
+display(pd.read_csv(tables / "rq4_coverage.csv").round(3))
+display(pd.read_csv(tables / "rq4_calibration.csv").round(3))
+for p in rq4(cfg):
+    if p.suffix == ".png":
+        display(Image(filename=str(p)))
+"""
+            ),
+            new_code_cell(EXPORT),
+        ],
+    )
+    _nb(
         "06_figures_tables",
         "06 · Figures and tables",
         "Builds every paper figure (vector PDF + 200 dpi PNG) and every LaTeX / Markdown table "

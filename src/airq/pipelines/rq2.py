@@ -55,10 +55,19 @@ def _predictions(data: Data, models_dir) -> dict[str, dict[int, np.ndarray]]:
     return preds
 
 
-def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
+def run_rq2(
+    cfg: dict,
+    quick: bool = False,
+    force: bool = False,
+    methods_override: dict[str, dict[int, np.ndarray]] | None = None,
+    tag: str = "rq2",
+) -> dict:
+    """Warning evaluation. `methods_override` replaces the standard method set (RQ4 passes its own
+    forecasts, e.g. the calibrated q90) and `tag` renames every output file, so the RQ2 results
+    are never touched by a second evaluation."""
     p = resolve_paths(cfg["paths"])
     tables, metrics = p["reports"] / "tables", p["reports"] / "metrics"
-    guard = metrics / "warning_test.json"
+    guard = metrics / ("warning_test.json" if tag == "rq2" else f"{tag}_warning_test.json")
     if guard.exists() and not force:
         raise FileExistsError(
             f"{guard.name} exists: the warning system was already evaluated on the test split."
@@ -72,7 +81,7 @@ def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
     starts = np.flatnonzero(np.r_[True, st[1:] != st[:-1]])
     bounds = {st[a]: (a, b) for a, b in zip(starts, np.r_[starts[1:], len(st)], strict=True)}
     test_start = np.datetime64(pd.Timestamp(cfg["split"]["test"][0]), "ns")
-    preds = _predictions(data, p["models"])
+    preds = methods_override if methods_override is not None else _predictions(data, p["models"])
     methods = list(preds)
     horizons = cfg["forecast"]["horizons"]
     ep = pd.read_csv(tables / "episodes_test.csv", parse_dates=["start", "end"])
@@ -203,21 +212,25 @@ def run_rq2(cfg: dict, quick: bool = False, force: bool = False) -> dict:
                 }
             )
 
-    example = _example(data, preds, alert_store, haze, bounds, ts_np, obs, st, cfg)
-    pd.DataFrame(rows).to_csv(tables / "rq2_warning.csv", index=False)
-    pd.DataFrame(haze_rows).to_csv(tables / "rq2_haze.csv", index=False)
-    pd.DataFrame(delta_rows).to_csv(tables / "rq2_delta_val.csv", index=False)
-    pd.DataFrame(hist_rows).to_csv(tables / "rq2_lead_hist.csv", index=False)
-    pd.DataFrame(pr_curve_rows).to_csv(tables / "rq2_pr_curve.csv", index=False)
+    example = (
+        _example(data, preds, alert_store, haze, bounds, ts_np, obs, st, cfg)
+        if tag == "rq2"
+        else None
+    )
+    pd.DataFrame(rows).to_csv(tables / f"{tag}_warning.csv", index=False)
+    pd.DataFrame(haze_rows).to_csv(tables / f"{tag}_haze.csv", index=False)
+    pd.DataFrame(delta_rows).to_csv(tables / f"{tag}_delta_val.csv", index=False)
+    pd.DataFrame(hist_rows).to_csv(tables / f"{tag}_lead_hist.csv", index=False)
+    pd.DataFrame(pr_curve_rows).to_csv(tables / f"{tag}_pr_curve.csv", index=False)
     if example is not None:
-        example[0].to_csv(tables / "rq2_example.csv", index=False)
-    (metrics / "warning_thresholds.json").write_text(
-        json.dumps(thresholds, indent=2), encoding="utf-8"
-    )
-    p["models"].mkdir(parents=True, exist_ok=True)
-    (p["models"] / "warning_thresholds.json").write_text(
-        json.dumps(thresholds, indent=2), encoding="utf-8"
-    )
+        example[0].to_csv(tables / f"{tag}_example.csv", index=False)
+    thr_name = "warning_thresholds.json" if tag == "rq2" else f"{tag}_thresholds.json"
+    (metrics / thr_name).write_text(json.dumps(thresholds, indent=2), encoding="utf-8")
+    if tag == "rq2":  # only the RQ2 point-forecast thresholds drive the live predictor
+        p["models"].mkdir(parents=True, exist_ok=True)
+        (p["models"] / "warning_thresholds.json").write_text(
+            json.dumps(thresholds, indent=2), encoding="utf-8"
+        )
     summary = {
         "evaluated_on": "test",
         "evaluated_at": datetime.now().isoformat(timespec="seconds"),

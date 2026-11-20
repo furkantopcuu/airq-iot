@@ -186,8 +186,10 @@ def run_demo(cfg: dict, args) -> int:
             stack.spawn("edge", ["airq.edge.gateway", "--broker", broker])
             stack.spawn("ingest", ["airq.server.ingest", "--broker", broker, "--db", str(db_path)])
             if not args.no_predictor:
-                stack.spawn("predictor", ["airq.server.predictor", "--broker", broker, "--db",
-                                          str(db_path)])  # fmt: skip
+                pred_args = ["airq.server.predictor", "--broker", broker, "--db", str(db_path)]
+                if (paths["models"] / "quantile_calibration.json").exists():
+                    pred_args.append("--quantiles")  # RQ4: the dashboard draws the q10-q90 band
+                stack.spawn("predictor", pred_args)
         stack.spawn("api", api_args(api_port))
         if not wait_for(
             lambda: httpx.get(f"http://127.0.0.1:{api_port}/health").status_code == 200, 30

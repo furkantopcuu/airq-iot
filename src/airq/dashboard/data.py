@@ -114,6 +114,17 @@ def station_figure(
                 line={"color": "#0072B2", "width": 2, "dash": "dot"},
             )
         )
+    band = [r for r in past6 if r.get("q10") is not None and r.get("q90") is not None]
+    if (
+        band
+    ):  # q10-q90 interval of the 6 h forecast (RQ4); absent when the predictor runs without it
+        xs = [_dt(r["target_ts"]) for r in band]
+        fig.add_trace(go.Scatter(x=xs, y=[r["q90"] for r in band], mode="lines", line={"width": 0},
+                                 hoverinfo="skip", showlegend=False))  # fmt: skip
+        fig.add_trace(go.Scatter(
+            x=xs, y=[r["q10"] for r in band], mode="lines", line={"width": 0}, fill="tonexty",
+            fillcolor="rgba(0, 114, 178, 0.18)", name="q10-q90 aralığı (6 sa)", hoverinfo="skip",
+        ))  # fmt: skip
     colors = {1: "#009E73", 6: "#0072B2", 24: "#D55E00"}
     for h, r in sorted(latest_forecasts(forecast).items()):
         fig.add_trace(go.Scatter(

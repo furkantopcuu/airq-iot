@@ -27,6 +27,7 @@ from airq.iot import topics
 from airq.iot.mqtt_client import connect_blocking, disconnect, make_client
 from airq.iot.schemas import MEASUREMENTS, Telemetry, WarningMsg
 from airq.models.manifest import git_short_hash, load_model_checked
+from airq.models.quantile import ALPHAS, rearrange, widen
 from airq.server import db
 
 HISTORY_H = 168 + 72  # longest lookback (168 h lag) + rolling window headroom
@@ -54,6 +55,7 @@ class OnlinePredictor:
     keep_log: bool = False
     thresholds: dict | None = None  # {"150": {"6": delta, ...}} from warning_thresholds.json
     cooldown_h: int = 6
+    quantiles: bool = False  # also write the calibrated q10 / q90 (RQ4); display only
     log: list[PredictionLog] = field(default_factory=list)
     late_dropped: int = 0
     expired: int = 0  # timestamps predicted after the wait ran out (some station missing)
@@ -64,6 +66,8 @@ class OnlinePredictor:
         self.last_done: pd.Timestamp | None = None
         self.earliest: pd.Timestamp | None = None
         self.models: dict[int, object] = {}
+        self.qmodels: dict[tuple[int, float], object] = {}
+        self.q_scale: dict[str, float] = {}
         self.fcfg = FeatureConfig.from_cfg(self.cfg, k=self.k, neighbors=self.neighbors)
         self.version = f"{config_hash(self.cfg)}-{git_short_hash()}"
         self._lock = threading.Lock()
@@ -128,7 +132,8 @@ class OnlinePredictor:
         feats, meta = build_features(cleaned, self.fcfg)
         now_rows = feats[feats["ts"] == ts]
         rows = []
-        for _, f in now_rows.iterrows():
+        bands = self._intervals(now_rows, feats, meta.feature_names) if self.quantiles else {}
+        for i, (_, f) in enumerate(now_rows.iterrows()):
             station = f["station"]
             yhat = {}
             for h in self.cfg["forecast"]["horizons"]:
@@ -144,8 +149,8 @@ class OnlinePredictor:
                         "target_ts": (ts + pd.Timedelta(hours=h)).isoformat(),
                         "horizon": h,
                         "yhat": yhat[h],
-                        "q10": None,
-                        "q90": None,
+                        "q10": bands[h][0][i] if h in bands else None,
+                        "q90": bands[h][1][i] if h in bands else None,
                         "n_neighbors": (
                             int(f["n_neighbors_available"])
                             if "n_neighbors_available" in f
@@ -192,6 +197,28 @@ class OnlinePredictor:
                 )
         return out
 
+    def _intervals(self, now_rows: pd.DataFrame, feats: pd.DataFrame, names: list[str]) -> dict:
+        """{h: (q10_cal[], q90_cal[])} aligned with `now_rows`, one batch per model."""
+        if not self.q_scale:
+            path = self.models_dir / "quantile_calibration.json"
+            self.q_scale = (
+                json.loads(path.read_text(encoding="utf-8"))["c"] if path.exists() else {}
+            )
+        x = now_rows[names].astype({c: feats[c].dtype for c in names})
+        out = {}
+        for h in self.cfg["forecast"]["horizons"]:
+            cols = []
+            for a in ALPHAS:
+                key = (h, a)
+                if key not in self.qmodels:
+                    name = f"q{int(round(a * 100))}_h{h}_k{self.k}"
+                    self.qmodels[key] = load_model_checked(self.models_dir, name, names)
+                cols.append(self.qmodels[key].predict(x))
+            q = rearrange(pd.DataFrame(cols).T.to_numpy())
+            lo, hi = widen(q[:, 0], q[:, 1], q[:, 2], float(self.q_scale.get(str(h), 1.0)))
+            out[h] = (lo, hi)
+        return out
+
     def _model(self, h: int, feature_names: list[str]):
         if h not in self.models:
             self.models[h] = load_model_checked(self.models_dir, f"h{h}_k{self.k}", feature_names)
@@ -218,13 +245,14 @@ def run(
     keep_log: bool = False,
     pred: OnlinePredictor | None = None,
     thresholds: dict | None = None,
+    quantiles: bool = False,
 ) -> OnlinePredictor:
     """Connect to the broker and predict until `stop` is set (pass `pred` to inspect it live)."""
     stop = stop or threading.Event()
     wait = (wait_ms if wait_ms is not None else cfg["iot"]["predictor_wait_ms"]) / 1000
     pred = pred or OnlinePredictor(
         cfg, models_dir, k, stations, neighbors, wait, keep_log=keep_log, thresholds=thresholds,
-        cooldown_h=cfg["warning"]["cooldown_h"],
+        cooldown_h=cfg["warning"]["cooldown_h"], quantiles=quantiles,
     )  # fmt: skip
     con = db.connect(db_path)
     client = make_client("predictor")
@@ -281,6 +309,7 @@ def main() -> None:
     ap.add_argument("--broker", default="127.0.0.1:1883")
     ap.add_argument("--k", type=int, default=11)
     ap.add_argument("--db", default=str(paths["db"]))
+    ap.add_argument("--quantiles", action="store_true", help="also write the q10 / q90 band")
     args = ap.parse_args()
     host, port = args.broker.rsplit(":", 1)
     neighbors = None
@@ -291,7 +320,8 @@ def main() -> None:
     stop = threading.Event()
     try:
         run(cfg, paths["models"], Path(args.db), host, int(port), args.k,
-            cfg["data"]["stations"], neighbors, stop, thresholds=thresholds)  # fmt: skip
+            cfg["data"]["stations"], neighbors, stop, thresholds=thresholds,
+            quantiles=args.quantiles)  # fmt: skip
     except KeyboardInterrupt:
         stop.set()
 
