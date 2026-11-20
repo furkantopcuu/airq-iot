@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 TIMING_DEPENDENT = ("rq3a_bench", "scenarios_summary")
+VOLATILE_KEYS = ("evaluated_at", "finished_at", "created", "created_at")  # wall-clock stamps
 
 
 @dataclass
@@ -98,6 +99,8 @@ def compare_json(a: Path, b: Path, rtol: float = 1e-6) -> list[str]:
     def walk(x, y, path: str) -> None:
         if isinstance(x, dict) and isinstance(y, dict):
             for k in sorted(set(x) | set(y)):
+                if k in VOLATILE_KEYS:
+                    continue
                 if k not in x or k not in y:
                     problems.append(f"{path}/{k}: only in one file")
                 else:

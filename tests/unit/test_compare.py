@@ -54,3 +54,10 @@ def test_json_metrics_compare_nested_numbers_within_tolerance(tmp_path):
     b.write_text(json.dumps({"rmse": {"h1": 18.0, "h6": [46.6, 1]}, "tag": "y"}))
     problems = cmp.compare_json(a, b)
     assert len(problems) == 2 and any("/rmse/h1" in p for p in problems)
+
+
+def test_wall_clock_stamps_are_not_differences(tmp_path):
+    a, b = tmp_path / "a.json", tmp_path / "b.json"
+    a.write_text(json.dumps({"evaluated_at": "2026-11-19T20:47:24", "rmse": 1.0}))
+    b.write_text(json.dumps({"evaluated_at": "2026-11-20T13:09:31", "rmse": 1.0}))
+    assert cmp.compare_json(a, b) == []
