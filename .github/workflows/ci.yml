@@ -41,4 +41,10 @@ jobs:
         run: |
           python -m airq.iot.broker &
           sleep 3
-          pytest -m broker
+          pytest -m broker -rf --tb=short --junitxml=broker-junit.xml
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: broker-junit
+          path: broker-junit.xml
+          if-no-files-found: ignore

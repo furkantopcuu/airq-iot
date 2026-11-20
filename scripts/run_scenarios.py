@@ -13,7 +13,7 @@ import argparse
 import sys
 
 from airq.config import load_config
-from airq.pipelines.scenarios import rescore, run_all
+from airq.pipelines.scenarios import rescore, run_ab, run_all
 from airq.scenarios.spec import load_all
 
 
@@ -26,12 +26,17 @@ def main() -> None:
     )
     ap.add_argument("--list", action="store_true", help="list scenarios and exit")
     ap.add_argument("--rescore", action="store_true", help="score stored runs again, no re-run")
+    ap.add_argument("--ab", action="store_true", help="paired edge off/on runs over 3 start dates")
     ap.add_argument("--dir", default="configs/scenarios")
     args = ap.parse_args()
     if args.list:
         sys.stdout.reconfigure(encoding="utf-8")  # descriptions are Turkish
         for sc in load_all(args.dir).values():
             print(f"{sc.name:22s} {sc.start}  {sc.description}")
+        return
+    if args.ab:
+        run_ab(load_config(), args.speedup, args.force, args.dir)
+        print("summary: reports/tables/scenarios_ab.csv")
         return
     if args.rescore:
         rescore(load_config(), args.only, args.dir)

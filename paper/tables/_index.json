@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-20T14:03:30",
+  "generated_at": "2026-11-20T20:47:25",
   "tables": {
     "dataset": {
       "source": [
@@ -152,7 +152,7 @@
         "reports/tables/rq3a_bench.csv"
       ],
       "caption_en": "RQ3a: live-system measurements under network impairment (reduced plan).",
-      "rows": 15,
+      "rows": 19,
       "columns": [
         "Speed (×)",
         "Loss (%)",
@@ -163,6 +163,8 @@
         "DB p50 (ms)",
         "DB p95 (ms)",
         "Msg/s",
+        "Warning p50 (s)",
+        "Behind",
         "Δ RMSE h=1"
       ]
     },
@@ -179,6 +181,23 @@
         "Damage, edge off",
         "Damage, edge on",
         "Recovered (%)"
+      ]
+    },
+    "scenarios_ab": {
+      "source": [
+        "reports/tables/scenarios_ab.csv"
+      ],
+      "caption_en": "Paired scenarios: the same fault window with the edge filter off and on (MAE, µg/m³; Δ = off - on, positive = the filter helped).",
+      "rows": 8,
+      "columns": [
+        "Fault",
+        "Start",
+        "MAE h=1 off",
+        "MAE h=1 on",
+        "Δ h=1",
+        "MAE h=6 off",
+        "MAE h=6 on",
+        "Δ h=6"
       ]
     },
     "scenarios": {

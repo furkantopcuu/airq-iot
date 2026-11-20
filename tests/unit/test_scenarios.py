@@ -425,3 +425,46 @@ def test_a_warning_for_an_earlier_episode_does_not_give_a_lead_time(tmp_path):
         2.0
     )  # the T0+41 warning is one hour after episode 2 began
     con.close()
+
+
+# --- paired A/B scenarios ---------------------------------------------------------------------
+def test_ab_variants_differ_only_in_the_edge_filter():
+    from airq.pipelines.scenarios import AB_DURATION_H, ab_variants
+
+    base = load_all(SCENARIO_DIR)["sensor_takilmasi"]
+    v = ab_variants(base, "2016-07-20 00:00")
+    assert set(v) == {"off", "on"} and v["off"].name == "ab_sensor_takilmasi_20160720_off"
+    off_steps, on_steps = v["off"].steps, v["on"].steps
+    assert [build_message(s.command).filter for s in (off_steps[0], on_steps[0])] == ["off", "on"]
+    assert off_steps[1].command == on_steps[1].command  # the SAME fault, same time, same label
+    assert off_steps[1].command["label"] == "fault" and off_steps[1].command["mode"] == "perturb"
+    assert off_steps[1].at_h == on_steps[1].at_h == 0
+    assert v["off"].start == v["on"].start == "2016-07-20 00:00"
+    assert v["off"].duration_h == AB_DURATION_H and v["off"].warmup_h == base.warmup_h
+
+
+def test_ab_table_and_paired_differences_from_stored_runs(tmp_path):
+    from airq.pipelines.scenarios import paired_differences, write_ab_table
+
+    folder = tmp_path / "scenarios" / "ab"
+    folder.mkdir(parents=True)
+    maes = {"off": (30.0, 20.0), "on": (10.0, 12.0)}
+    for state, (h1, h6) in maes.items():
+        run = {
+            "scenario": f"ab_sensor_sicramasi_20161005_{state}",
+            "sim_start": "2016-10-05 00:00:00",
+            "scorecard": [
+                {"label": "fault", "warned": state == "off", "matched": False,
+                 "mae_window_h1": h1, "mae_window_h6": h6, "mae_next_6h_h1": h1,
+                 "mae_next_6h_h6": h6, "peak_forecast_h6": 90.0 if state == "off" else 50.0,
+                 "n_forecasts": 12}
+            ],
+        }  # fmt: skip
+        (folder / f"{run['scenario']}.json").write_text(json.dumps(run))
+    path = write_ab_table(tmp_path)
+    df = pd.read_csv(path)
+    assert sorted(df["edge"]) == ["off", "on"] and set(df["fault"]) == {"sensor_sicramasi"}
+    assert set(df["start"]) == {"2016-10-05"}
+    d = paired_differences(df).iloc[0]
+    assert d["mae_window_h1_diff"] == 20.0 and d["mae_window_h6_diff"] == 8.0
+    assert d["peak_forecast_h6_diff"] == 40.0  # positive = the filter helped

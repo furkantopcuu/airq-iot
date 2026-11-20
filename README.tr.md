@@ -114,6 +114,23 @@ dosyasında, her teknoloji seçiminin gerekçesi [docs/NEDEN.md](docs/NEDEN.md) 
 
 ![Spike ve stuck arızaları, edge kapalı / açık](reports/figures/scenarios_edge.png)
 
+**Eşleştirilmiş koşular: aynı arıza penceresi, edge filtresi kapalı ve açık (3 başlangıç tarihi)**
+
+<!-- TABLE:scenarios_ab -->
+| Fault | Start | MAE h=1 off | MAE h=1 on | Δ h=1 | MAE h=6 off | MAE h=6 on | Δ h=6 |
+|---|---|---|---|---|---|---|---|
+| spike, 3 h | 2016-04-15 | 127.3 | 24.5 | 102.8 | 13.0 | 27.0 | -14.0 |
+| spike, 3 h | 2016-07-20 | 79.7 | 36.8 | 42.9 | 29.6 | 65.5 | -35.9 |
+| spike, 3 h | 2016-10-05 | 76.1 | 86.1 | -10.0 | 30.9 | 29.1 | 1.7 |
+| spike, 3 h | mean of 3 | 94.4 | 49.1 | 45.2 | 24.5 | 40.6 | -16.1 |
+| stuck, 12 h | 2016-04-15 | 29.3 | 32.6 | -3.2 | 27.6 | 31.6 | -4.0 |
+| stuck, 12 h | 2016-07-20 | 46.3 | 51.4 | -5.2 | 96.4 | 96.4 | 0.1 |
+| stuck, 12 h | 2016-10-05 | 43.5 | 49.4 | -5.8 | 29.2 | 26.1 | 3.1 |
+| stuck, 12 h | mean of 3 | 39.7 | 44.4 | -4.7 | 51.1 | 51.4 | -0.3 |
+<!-- /TABLE:scenarios_ab -->
+
+![Paired](reports/figures/scenarios_ab.png)
+
 Canlı sistem ölçümü (RQ3a: kayıp, gecikme, çevrimdışı cihaz, CPU ve bellek)
 `reports/tables/rq3a_bench.csv` ve `reports/figures/rq3a_system.png` dosyalarındadır.
 
@@ -200,8 +217,11 @@ madde); tam test takımı yalnızca Windows'ta doğrulanmıştır.
 - Ağ bozulması uygulama katmanında emüle edilir (kaybolan mesaj hiç yayınlanmaz), işletim sistemi
   düzeyindeki `tc netem` ile değil (Windows). Bu yüzden MQTT yeniden iletimi devreye girmez ve TCP
   kuyruklanmasının kuyruk gecikmesine etkisi **ölçülmemiştir**.
-- Tüm sistem ölçümleri tek makineden gelir (mutlak değerler makineye özgüdür); RQ3a planı süre
-  bütçesine sığsın diye kısaltılmıştır ve her senaryo bir kez çalıştırılmıştır (varyans yok).
+- Tüm sistem ölçümleri tek makineden gelir (mutlak değerler makineye özgüdür). RQ3a, belirtilen
+  grid'in tamamını 3 tekrarla koşmuştur; hazır senaryolar birer kez, eşleştirilmiş edge açık /
+  kapalı karşılaştırması ise arıza türü başına 3 pencerede koşmuştur (anlamlılık testi yok).
+- 3600×'te (saniyede 1 simüle saat) veri kaybında (eksik istasyon için 500 ms beklenir) ya da
+  cihaz çevrimdışı kalınca tahmin servisi geride kalır; tablo kaç koşunun geride kaldığını verir.
 - Komut kanalında kimlik doğrulama yoktur (yalnızca localhost); gerçek dağıtımda MQTT ACL + TLS gerekir.
 - Modeller aşırı kirlilik tepelerini olduğundan düşük tahmin eder (`reports/tables/rq1_extreme.csv`).
 

@@ -20,8 +20,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from airq.iot.schemas import Command, EdgeControl, FleetControl, NetControl
 
 METRICS = (
-    "mae_next_6h_h1", "mae_next_6h_h6", "warned", "matched", "lead_time_h", "peak_forecast_h6",
-    "min_n_neighbors", "delivery_ratio", "latency_p95_ms", "n_forecasts",
+    "mae_next_6h_h1", "mae_next_6h_h6", "mae_window_h1", "mae_window_h6", "warned", "matched",
+    "lead_time_h", "peak_forecast_h6", "min_n_neighbors", "delivery_ratio", "latency_p95_ms",
+    "n_forecasts",
 )  # fmt: skip
 RELATIONS = ("greater_than", "less_than", "true", "false")
 

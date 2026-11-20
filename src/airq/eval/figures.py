@@ -378,16 +378,30 @@ def rq3a_system(agg: pd.DataFrame, out_dir: Path, name: str = "rq3a_system") -> 
     s2 = slow[slow["delay_ms"] == 0].sort_values("loss")
     b.plot(
         100 * s2["loss"],
-        s2["lat_warn_p50_ms_mean"],
+        s2["lat_warn_p50_ms_median"],
         "^",
         color=OKABE_ITO[0],
-        label="to warning p50 (real time)",
+        label="to warning p50 (real time, median)",
     )
+    for (
+        _,
+        r,
+    ) in s2.iterrows():  # runs in which the predictor fell behind (500 ms wait for lost data)
+        if r.get("behind_runs", 0) > 0:
+            b.annotate(
+                f"{int(r['behind_runs'])}/{int(r['reps'])} behind",
+                (100 * r["loss"], r["lat_warn_p50_ms_median"]),
+                textcoords="offset points",
+                xytext=(-4, 6),
+                fontsize=6,
+                ha="right",
+            )
     b.set_yscale("log")
     b.set_xlabel("emulated loss (%)")
     b.set_ylabel("latency (ms)")
     b.set_title("End-to-end latency")
-    b.legend(frameon=False, fontsize=6.5)
+    b.set_ylim(2, 8e5)
+    b.legend(frameon=False, fontsize=6.2, loc="center right")
     f0 = fast[fast["delay_ms"] == 0].sort_values("loss")
     c.errorbar(
         100 * f0["loss"],
@@ -396,14 +410,14 @@ def rq3a_system(agg: pd.DataFrame, out_dir: Path, name: str = "rq3a_system") -> 
         fmt="o-",
         color=OKABE_ITO[0],
         capsize=2,
-        label="36 000x (2 reps)",
+        label=f"36 000x ({int(f0['reps'].max())} reps)",
     )
     c.plot(
         100 * s2["loss"],
         s2["paired_delta_h1_mean"],
         "^",
         color=OKABE_ITO[1],
-        label="3 600x (1 rep)",
+        label=f"3 600x ({int(s2['reps'].max())} reps)",
     )
     c.set_xlabel("emulated loss (%)")
     c.set_ylabel("RMSE increase, 1 h (µg/m³)")
@@ -599,5 +613,33 @@ def rq4_uncertainty(
         c.legend(frameon=False, fontsize=5.6, loc="upper center", ncol=1)
     else:
         c.axis("off")
+    fig.tight_layout()
+    return save(fig, out_dir, name)
+
+
+def scenarios_ab(diffs: pd.DataFrame, out_dir: Path, name: str = "scenarios_ab") -> list[Path]:
+    """Fig. 12: paired live fault runs, MAE vs the clean recording over the fault window (h = 6 h),
+    edge filter off vs on, for each fault start date (same window in both runs)."""
+    apply_style()
+    labels = {"sensor_sicramasi": "spike (k=8 σ, 3 h)", "sensor_takilmasi": "stuck (12 h)"}
+    faults = [f for f in labels if f in set(diffs["fault"])]
+    if not faults:
+        raise FileNotFoundError("paired scenario results not found; run scripts.run_scenarios --ab")
+    fig, axes = plt.subplots(1, len(faults), figsize=(FULL_W, 2.7), squeeze=False)
+    for ax, fault in zip(axes[0], faults, strict=False):
+        g = diffs[diffs["fault"] == fault].sort_values("start")
+        x = np.arange(len(g))
+        for j, (col, lab, hatch) in enumerate(
+            (("mae_window_h6_off", "edge off", ""), ("mae_window_h6_on", "edge on", "//"))
+        ):
+            vals = g[col].to_numpy(float)
+            ax.bar(x + (j - 0.5) * 0.36, vals, 0.36, label=lab, hatch=hatch,
+                   color=OKABE_ITO[3 if j == 0 else 0], edgecolor="white")  # fmt: skip
+            for xi, v in zip(x + (j - 0.5) * 0.36, vals, strict=False):
+                ax.text(xi, v, f"{v:.1f}", ha="center", va="bottom", fontsize=6.5)
+        ax.set_xticks(x, g["start"].astype(str).str[:7])
+        ax.set_ylabel("MAE vs clean, h = 6 h (µg/m³)")
+        ax.set_title(labels[fault])
+        ax.legend(frameon=False)
     fig.tight_layout()
     return save(fig, out_dir, name)

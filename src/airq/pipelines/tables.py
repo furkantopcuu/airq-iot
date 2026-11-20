@@ -34,6 +34,7 @@ MODEL_NAMES = {
     "M2_lgbm_k11": "M2b LightGBM (k=11)",
 }
 HORIZONS = (1, 6, 24)
+FAULT_NAMES = {"sensor_takilmasi": "stuck, 12 h", "sensor_sicramasi": "spike, 3 h"}
 LATEX_SYMBOLS = {
     "µg/m³": r"\textmu g/m$^3$", "≥": r"$\geq$", "σ": r"$\sigma$", "Δ": r"$\Delta$",
     "±": r"$\pm$", "→": r"$\rightarrow$", "×": r"$\times$", "–": "--",
@@ -180,6 +181,10 @@ def t_rq3a(tables: Path) -> pd.DataFrame:
             "DB p50 (ms)": b["lat_db_p50_ms_mean"].map(lambda v: fmt(v, 0)),
             "DB p95 (ms)": b["lat_db_p95_ms_mean"].map(lambda v: fmt(v, 0)),
             "Msg/s": b["throughput_msg_s_mean"].map(lambda v: fmt(v, 0)),
+            "Warning p50 (s)": b["lat_warn_p50_ms_median"].map(lambda v: fmt(v / 1000, 1)),
+            "Behind": (
+                b["behind_runs"].astype(int).astype(str) + "/" + b["reps"].astype(int).astype(str)
+            ),
             "Δ RMSE h=1": b["paired_delta_h1_mean"].map(lambda v: fmt(v, 2)),
         }
     ).reset_index(drop=True)
@@ -261,6 +266,34 @@ def t_rq4_warning(tables: Path) -> pd.DataFrame:
     ).reset_index(drop=True)
 
 
+def t_scenarios_ab(tables: Path) -> pd.DataFrame:
+    """Paired runs: the same fault, edge filter off and on; positive difference = it helped."""
+    from airq.pipelines.scenarios import paired_differences
+
+    d = paired_differences(_read(tables, "scenarios_ab"))
+    rows = []
+    for fault in sorted(d["fault"].unique()):
+        g = d[d["fault"] == fault]
+        for _, r in g.iterrows():
+            rows.append(_ab_row(fault, r["start"], r))
+        mean = g.drop(columns=["fault", "start"]).mean()
+        rows.append(_ab_row(fault, f"mean of {len(g)}", mean))
+    return pd.DataFrame(rows)
+
+
+def _ab_row(fault: str, start: str, r) -> dict:
+    return {
+        "Fault": FAULT_NAMES.get(fault, fault),
+        "Start": start,
+        "MAE h=1 off": fmt(r["mae_window_h1_off"], 1),
+        "MAE h=1 on": fmt(r["mae_window_h1_on"], 1),
+        "Δ h=1": fmt(r["mae_window_h1_diff"], 1),
+        "MAE h=6 off": fmt(r["mae_window_h6_off"], 1),
+        "MAE h=6 on": fmt(r["mae_window_h6_on"], 1),
+        "Δ h=6": fmt(r["mae_window_h6_diff"], 1),
+    }
+
+
 TABLES = [
     TableSpec(
         "dataset",
@@ -338,6 +371,15 @@ TABLES = [
         "RQ3b: hatalı girdinin yol açtığı RMSE artışı, edge kapalı ve açık.",
         "RQ3b: RMSE increase caused by faulty inputs, edge filter off vs on.",
         t_rq3b,
+    ),
+    TableSpec(
+        "scenarios_ab",
+        "scenarios_ab",
+        "Eşleştirilmiş senaryolar: aynı arıza penceresi, edge filtresi kapalı ve açık (MAE, µg/m³; "
+        "Δ = kapalı − açık, pozitif = filtre yardımcı oldu).",
+        "Paired scenarios: the same fault window with the edge filter off and on (MAE, µg/m³; "
+        "Δ = off - on, positive = the filter helped).",
+        t_scenarios_ab,
     ),
     TableSpec(
         "scenarios",

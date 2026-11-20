@@ -26,7 +26,7 @@ from airq.env import resolve_paths
 from airq.iot.broker import broker_reachable, start_broker
 from airq.pipelines.rq3a import _drain, _free_port, _spawn
 from airq.scenarios.player import PlayerThread, ScenarioPlayer, marks_for
-from airq.scenarios.spec import Scenario, evaluate_expected, load_all
+from airq.scenarios.spec import Scenario, Step, evaluate_expected, load_all
 from airq.server import db
 from airq.server.control import Controller
 from airq.server.scorecard import SCORING_VERSION, scorecard
@@ -251,3 +251,108 @@ def write_summary(reports: Path, results: list[dict]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(path, index=False)
     return path
+
+
+# ---------------------------------------------------------------------------------------------
+# paired A/B: the SAME fault window with the edge filter off and on (separate stack runs), repeated
+# over several fault start dates. Fixes the confound of the single-run scenarios (the "edge off" and
+# "edge on" windows lay at different times) and gives a small replication (spec 9.5)
+# ---------------------------------------------------------------------------------------------
+AB_BASES = ("sensor_takilmasi", "sensor_sicramasi")  # stuck 12 h, spike 3 h (k = 8 sigma)
+AB_STARTS = ("2016-04-15 00:00", "2016-07-20 00:00", "2016-10-05 00:00")  # fixed in advance
+AB_DURATION_H = 14.0
+
+
+def ab_variants(base: Scenario, start: str) -> dict[str, Scenario]:
+    """{'off': scenario, 'on': scenario}: identical fault, only the edge filter differs."""
+    fault = next(s for s in base.steps if "mode" in s.command and s.command.get("kind") is None)
+    tag = pd.Timestamp(start).strftime("%Y%m%d")
+    out = {}
+    for state in ("off", "on"):
+        out[state] = Scenario(
+            name=f"ab_{base.name}_{tag}_{state}",
+            description=f"{base.name}: the same fault with the edge filter {state}",
+            start=start,
+            warmup_h=base.warmup_h,
+            duration_h=AB_DURATION_H,
+            steps=[
+                Step(at_h=0, command={"kind": "edge", "filter": state}),
+                Step(at_h=0, command={**fault.command, "label": "fault"}),
+            ],
+        )
+    return out
+
+
+def run_ab(
+    cfg: dict,
+    speedup: float = 7200.0,
+    force: bool = False,
+    scenarios_dir: Path | str = "configs/scenarios",
+    starts: tuple[str, ...] = AB_STARTS,
+) -> list[dict]:
+    paths = resolve_paths(cfg["paths"])
+    out_dir = paths["reports"] / "scenarios" / "ab"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    bases = load_all(scenarios_dir)
+    truth = Truth.from_cfg(cfg)
+    work = paths["reports"] / "scenarios" / "work"
+    jobs = [
+        (name, start, state, sc)
+        for name in AB_BASES
+        for start in starts
+        for state, sc in ab_variants(bases[name], start).items()
+    ]
+    results = []
+    for i, (_name, _start, _state, sc) in enumerate(jobs, 1):
+        path = out_dir / f"{sc.name}.json"
+        if path.exists() and not force:
+            print(f"[{i}/{len(jobs)}] {sc.name}: exists, skipped", flush=True)
+            results.append(json.loads(path.read_text(encoding="utf-8")))
+            continue
+        t0 = time.monotonic()
+        res = run_scenario(cfg, sc, work, truth, speedup)
+        path.write_text(json.dumps(res, indent=2, default=str), encoding="utf-8")
+        print(f"[{i}/{len(jobs)}] {sc.name} done in {time.monotonic() - t0:.0f}s", flush=True)
+        results.append(res)
+    write_ab_table(paths["reports"])
+    return results
+
+
+AB_COLUMNS = ["mae_window_h1", "mae_window_h6", "mae_next_6h_h1", "mae_next_6h_h6",
+              "peak_forecast_h6", "n_forecasts"]  # fmt: skip
+
+
+def write_ab_table(reports: Path) -> Path:
+    """reports/tables/scenarios_ab.csv: one row per (fault, start, edge) from the stored runs."""
+    rows = []
+    for p in sorted((reports / "scenarios" / "ab").glob("ab_*.json")):
+        r = json.loads(p.read_text(encoding="utf-8"))
+        parts = r["scenario"].split("_")  # ab_<base>_<yyyymmdd>_<state>
+        state, base = parts[-1], "_".join(parts[1:-2])
+        item = next(x for x in r["scorecard"] if x["label"] == "fault")
+        rows.append(
+            {
+                "fault": base, "start": pd.Timestamp(r["sim_start"]).strftime("%Y-%m-%d"),
+                "edge": state, "warned": item["warned"], "matched": item["matched"],
+                **{c: item.get(c) for c in AB_COLUMNS},
+            }
+        )  # fmt: skip
+    path = reports / "tables" / "scenarios_ab.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_csv(path, index=False)
+    return path
+
+
+def paired_differences(df: pd.DataFrame) -> pd.DataFrame:
+    """Per fault and start: metric(edge off) - metric(edge on) (positive = the filter helped)."""
+    out = []
+    for (fault, start), g in df.groupby(["fault", "start"]):
+        off, on = g[g["edge"] == "off"], g[g["edge"] == "on"]
+        if off.empty or on.empty:
+            continue
+        row = {"fault": fault, "start": start}
+        for c in ("mae_window_h1", "mae_window_h6", "peak_forecast_h6"):
+            row[f"{c}_off"], row[f"{c}_on"] = off[c].iloc[0], on[c].iloc[0]
+            row[f"{c}_diff"] = off[c].iloc[0] - on[c].iloc[0]
+        out.append(row)
+    return pd.DataFrame(out)

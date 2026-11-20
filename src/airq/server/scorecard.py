@@ -173,6 +173,17 @@ def score_item(
             if not np.isnan(truth_at(r.station, r.target_ts))
         ]
         out[f"mae_next_6h_h{h}"] = _num(np.mean(err)) if err else None
+    in_window = preds[
+        pd.to_datetime(preds["made_at_ts"]) <= win_end
+    ]  # made during the whole window
+    for h in (1, 6):
+        sub = in_window[in_window["horizon"] == h]
+        err = [
+            abs(r.yhat - truth_at(r.station, r.target_ts))
+            for r in sub.itertuples()
+            if not np.isnan(truth_at(r.station, r.target_ts))
+        ]
+        out[f"mae_window_h{h}"] = _num(np.mean(err)) if err else None
     h6 = preds[preds["horizon"] == 6]
     out["peak_forecast_h6"] = _num(h6["yhat"].max()) if len(h6) else None
     out["min_n_neighbors"] = _num(preds["n_neighbors"].min()) if len(preds) else None

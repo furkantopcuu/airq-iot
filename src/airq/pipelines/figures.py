@@ -99,9 +99,23 @@ def make_all(cfg: dict) -> tuple[list, dict[str, str]]:
         ("rq3a", rq3a),
         ("rq4", rq4),
         ("scenarios", scenarios),
+        ("scenarios_ab", scenarios_ab),
     ):
         try:
             made += fn(cfg)
         except FileNotFoundError as exc:
             skipped[name] = f"missing input: {Path(str(exc)).name or exc}"
     return made, skipped
+
+
+def scenarios_ab(cfg: dict) -> list:
+    """Figure 12 from the paired scenario runs (run after scripts.run_scenarios --ab)."""
+    from airq.pipelines.scenarios import paired_differences
+
+    paths = resolve_paths(cfg["paths"])
+    f = paths["reports"] / "tables" / "scenarios_ab.csv"
+    if not f.exists():
+        raise FileNotFoundError(f)
+    return list(
+        figures.scenarios_ab(paired_differences(pd.read_csv(f)), paths["reports"] / "figures")
+    )

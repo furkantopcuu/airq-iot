@@ -115,6 +115,23 @@ Every finding, including the negative ones and the caveats, is logged in
 
 ![Spike and stuck faults, edge off vs on](reports/figures/scenarios_edge.png)
 
+**Paired runs: the same fault window with the edge filter off and on (3 start dates)**
+
+<!-- TABLE:scenarios_ab -->
+| Fault | Start | MAE h=1 off | MAE h=1 on | Δ h=1 | MAE h=6 off | MAE h=6 on | Δ h=6 |
+|---|---|---|---|---|---|---|---|
+| spike, 3 h | 2016-04-15 | 127.3 | 24.5 | 102.8 | 13.0 | 27.0 | -14.0 |
+| spike, 3 h | 2016-07-20 | 79.7 | 36.8 | 42.9 | 29.6 | 65.5 | -35.9 |
+| spike, 3 h | 2016-10-05 | 76.1 | 86.1 | -10.0 | 30.9 | 29.1 | 1.7 |
+| spike, 3 h | mean of 3 | 94.4 | 49.1 | 45.2 | 24.5 | 40.6 | -16.1 |
+| stuck, 12 h | 2016-04-15 | 29.3 | 32.6 | -3.2 | 27.6 | 31.6 | -4.0 |
+| stuck, 12 h | 2016-07-20 | 46.3 | 51.4 | -5.2 | 96.4 | 96.4 | 0.1 |
+| stuck, 12 h | 2016-10-05 | 43.5 | 49.4 | -5.8 | 29.2 | 26.1 | 3.1 |
+| stuck, 12 h | mean of 3 | 39.7 | 44.4 | -4.7 | 51.1 | 51.4 | -0.3 |
+<!-- /TABLE:scenarios_ab -->
+
+![Paired](reports/figures/scenarios_ab.png)
+
 The live-system benchmark (RQ3a: loss, delay, offline devices, CPU and memory) is in
 `reports/tables/rq3a_bench.csv` and `reports/figures/rq3a_system.png`.
 
@@ -202,8 +219,12 @@ The broker integration job on Ubuntu is currently failing and not required (open
 - Network impairment is emulated in the application layer (a lost message is never published), not
   with OS-level `tc netem` (Windows). MQTT retransmission therefore plays no role, and the effect of
   TCP queueing on tail latency is **not** measured.
-- All system measurements come from one machine (absolute numbers are machine-specific); the RQ3a
-  plan was shortened to fit the time budget, and each scenario was run once (no variance).
+- All system measurements come from one machine (absolute numbers are machine-specific). RQ3a ran
+  the full specified grid with 3 repetitions; the ready-made scenarios ran once each, and the
+  paired edge on / off comparison covers 3 fault windows per fault type (no significance tests).
+- At 3600x (one simulated hour per second) the predictor falls behind when data is lost (it waits
+  500 ms for a missing station) or a device stays offline; the table reports how many runs fell
+  behind.
 - The command channel has no authentication (localhost only); a real deployment needs MQTT ACLs
   and TLS.
 - Models underestimate extreme pollution peaks (see `reports/tables/rq1_extreme.csv`).

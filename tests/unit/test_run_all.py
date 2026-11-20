@@ -26,7 +26,7 @@ def test_every_stage_points_at_an_existing_script_in_dependency_order():
     names = [s.name for s in ra.stages()]
     assert names == [
         "download", "dataset", "edge", "forecast_v0", "tuning", "final", "warning",
-        "robustness", "uncertainty", "system", "scenarios", "figures", "tables",
+        "robustness", "uncertainty", "system", "scenarios", "scenarios_ab", "figures", "tables",
     ]  # fmt: skip
     for s in ra.stages():
         assert (REPO / "scripts" / f"{s.script}.py").exists(), s.script
@@ -45,9 +45,10 @@ def test_plan_selects_by_mode_group_skip_and_only():
     quick = [s.name for s in ra.plan(True, True, set(), None)]
     assert "tuning" not in quick and "system" not in quick  # slow stages never run in QUICK
     assert "scenarios" not in quick and "final" in quick
-    assert [s.name for s in ra.plan(False, True, set(), None)][-4:] == [
+    assert [s.name for s in ra.plan(False, True, set(), None)][-5:] == [
         "system",
         "scenarios",
+        "scenarios_ab",
         "figures",
         "tables",
     ]

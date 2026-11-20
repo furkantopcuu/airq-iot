@@ -1,0 +1,65 @@
+{
+  "scenario": "ab_sensor_takilmasi_20160415_off",
+  "description": "sensor_takilmasi: the same fault with the edge filter off",
+  "sim_start": "2016-04-15 00:00:00",
+  "sim_zero": "2016-04-25 00:00:00",
+  "sim_end": "2016-04-26 14:00:00",
+  "speedup": 7200.0,
+  "fleet_wall_s": 140.9,
+  "drain_s": 14.0,
+  "steps_fired": 2,
+  "steps_total": 2,
+  "step_log": [
+    {
+      "step": 0,
+      "at_h": 0.0,
+      "label": null,
+      "sim_ts": "2016-04-25T00:00:00",
+      "kind": "EdgeControl",
+      "ok": true,
+      "cmd_id": "f168c6cd-01b6-48a2-a1fd-c7e289fe02a8",
+      "errors": []
+    },
+    {
+      "step": 1,
+      "at_h": 0.0,
+      "label": "fault",
+      "sim_ts": "2016-04-25T00:00:00",
+      "kind": "Command",
+      "ok": true,
+      "cmd_id": "3e33ffc0-9535-4eba-9b3b-401bc42e017b",
+      "errors": []
+    }
+  ],
+  "scorecard": [
+    {
+      "label": "fault",
+      "kind": "fault",
+      "mode": "perturb",
+      "edge_filter": "off",
+      "stations": "Dongsi",
+      "t0": "2016-04-25T01:00:00",
+      "t1": "2016-04-25T13:00:00",
+      "n_forecasts": 39,
+      "mae_next_6h_h1": 9.807039289949985,
+      "mae_next_6h_h6": 34.79718813388191,
+      "mae_window_h1": 29.316763293844247,
+      "mae_window_h6": 27.644552251561183,
+      "peak_forecast_h6": 113.57342681288925,
+      "min_n_neighbors": 11.0,
+      "warned": true,
+      "matched": false,
+      "lead_time_h": null,
+      "n_onsets": 1,
+      "n_onsets_warned_ahead": 0,
+      "first_onset": "2016-04-25T12:00:00",
+      "scoring_version": 2,
+      "delivery_ratio": 1.0,
+      "latency_p95_ms": 3.1999999999999957
+    }
+  ],
+  "expected": [],
+  "reference": "recorded data replay (server/truth.py)",
+  "scoring_version": 2,
+  "evaluated_at": "2026-11-20T18:14:16"
+}

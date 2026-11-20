@@ -175,6 +175,8 @@ def run_one(
     work.mkdir(parents=True, exist_ok=True)
     tag = run.key.replace("|", "_")
     db_path, port = work / f"{tag}.db", _free_port()
+    for suffix in ("", "-wal", "-shm"):  # a re-run must start from an empty database, never append
+        Path(str(db_path) + suffix).unlink(missing_ok=True)
     broker = start_broker("127.0.0.1", port, "auto")
     for _ in range(100):
         if broker_reachable("127.0.0.1", port):
@@ -499,6 +501,24 @@ def seq_gaps(run_db: Path) -> int:
     return int((r["mx"] + 1 - r["n"]).clip(lower=0).sum())
 
 
+BEHIND_DRAIN_S = 60.0  # real-time runs (3600x): a predictor that keeps up drains in about 2 s
+BEHIND_FACTOR = 1.25  # offline-device runs: slower than 1.25 x the intact-network median = behind
+
+
+def predictor_behind(runs: pd.DataFrame) -> pd.Series:
+    """True for runs in which the predictor fell behind the arriving data (criteria fixed in
+    advance, see docs/KARARLAR.md): 3600x runs that needed > 60 s to drain, and offline-device
+    runs whose warning latency exceeds 1.25 x the median of the intact-network runs at that speed.
+    (At 36000x the predictor is saturated by design, so only the offline comparison is judged.)"""
+    behind = pd.Series(False, index=runs.index)
+    slow = runs["speedup"] == runs["speedup"].min()
+    behind |= slow & (runs["drain_s"] > BEHIND_DRAIN_S)
+    fast = runs["speedup"] == runs["speedup"].max()
+    intact = runs[fast & (runs["offline_k"] == 0)]["lat_warn_p50_ms"].median()
+    behind |= fast & (runs["offline_k"] > 0) & (runs["lat_warn_p50_ms"] > BEHIND_FACTOR * intact)
+    return behind
+
+
 def aggregate_bench(cfg: dict, plan: str = "reduced") -> pd.DataFrame:
     """Per-configuration table (mean and std over repetitions) -> reports/tables/rq3a_bench.csv."""
     p = resolve_paths(cfg["paths"])
@@ -528,11 +548,15 @@ def aggregate_bench(cfg: dict, plan: str = "reduced") -> pd.DataFrame:
             ]
         rows.append(row)
     runs = pd.DataFrame(rows)
+    runs["predictor_behind"] = predictor_behind(runs)
     keys = ["speedup", "offline_k", "loss", "delay_ms"]
     num = [c for c in runs.columns if runs[c].dtype.kind in "fi" and c not in keys + ["rep"]]
     g = runs.groupby(keys)
     agg = g[num].mean().add_suffix("_mean").join(g[num].std(ddof=0).add_suffix("_std"))
     agg["reps"] = g.size()
+    agg["behind_runs"] = g["predictor_behind"].sum().astype(int)
+    # bimodal (kept up ~1 s / fell behind ~115 s): the mean is meaningless, use the median
+    agg["lat_warn_p50_ms_median"] = g["lat_warn_p50_ms"].median()
     out = agg.reset_index()
     out.to_csv(tables / "rq3a_bench.csv", index=False)
     runs.to_csv(bench / f"runs_{plan}.csv", index=False)

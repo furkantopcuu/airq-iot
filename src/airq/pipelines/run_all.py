@@ -144,6 +144,15 @@ def stages(trials: int = OPTUNA_TRIALS) -> list[Stage]:
             est="25 min (needs the broker)",
         ),  # fmt: skip
         Stage(
+            "scenarios_ab",
+            "run_scenarios",
+            ("--ab",),
+            (t + "scenarios_ab.csv",),
+            skip_in_quick=True,
+            group="system",
+            est="40 min (needs the broker)",
+        ),
+        Stage(
             "figures",
             "make_figures",
             (),
