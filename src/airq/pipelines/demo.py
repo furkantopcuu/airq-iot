@@ -222,6 +222,9 @@ def run_demo(cfg: dict, args) -> int:
         env = {"AIRQ_DB": str(db_path), "AIRQ_BROKER": broker,
                "AIRQ_API_URL": f"http://127.0.0.1:{api_port}"}  # fmt: skip
         stack.env.update(env)
+        if not args.offline:  # the dashboard says "warming up" until the forecaster has its history
+            warm_end = pd.Timestamp(d["start"]) + d["warmup_h"] * HOUR
+            stack.env["AIRQ_WARMUP_UNTIL"] = warm_end.isoformat()
         if not args.offline:
             stack.spawn("edge", ["airq.edge.gateway", "--broker", broker])
             stack.spawn("ingest", ["airq.server.ingest", "--broker", broker, "--db", str(db_path)])

@@ -143,3 +143,20 @@ def test_station_figure_draws_the_q10_q90_band_only_when_the_forecast_has_one():
         )
         == 1
     )  # rows without a band are skipped
+
+
+def test_a_card_says_warming_up_until_the_forecaster_has_its_history():
+    from airq.dashboard import data as dash
+
+    info = {"station": "Dongsi", "status": "online", "last_pm25": 12.0, "active_warnings": 0}
+    until, now = "2017-01-02T16:00:00", "2016-12-29T16:00:00"
+    left = dash.warmup_left_hours(until, now)
+    assert left == 96.0
+    html = dash.card_html(dash.station_card(info, [], left))
+    assert "ısınıyor" in html and "96" in html and "—" not in html.split("6 saat sonra")[1][:80]
+    assert dash.warmup_left_hours(until, "2017-01-03T00:00:00") is None  # warm-up over
+    assert dash.warmup_left_hours(None, now) is None and dash.warmup_left_hours(until, None) is None
+    assert dash.warmup_left_hours("not a time", now) is None
+    # a forecast present: the normal number, no warm-up text
+    row = {"horizon": 6, "yhat": 80.0, "made_at_ts": "2016-12-29T16:00:00", "n_neighbors": 11}
+    assert "ısınıyor" not in dash.card_html(dash.station_card(info, [row], left))

@@ -5,6 +5,8 @@ Pages: scenario control + live monitoring, network view, station detail, warning
 experiment results.
 """
 
+import os
+
 import pandas as pd
 import streamlit as st
 
@@ -51,11 +53,23 @@ except ApiError as exc:
     st.sidebar.error(str(exc))
 
 
+def warmup_left() -> float | None:
+    """Demo only: hours of replay left until the forecaster has its 240 h of history."""
+    until = os.environ.get("AIRQ_WARMUP_UNTIL")
+    if not until:
+        return None
+    try:
+        return dash.warmup_left_hours(until, api.get("/control/active").get("sim_now"))
+    except ApiError:
+        return None
+
+
 def load_cards() -> list[dict]:
     cards = []
+    left = warmup_left()
     for info in api.get("/stations"):
         rows = api.get(f"/forecast/{info['station']}", hours=6)
-        cards.append(dash.station_card(info, rows))
+        cards.append(dash.station_card(info, rows, left))
     return cards
 
 
@@ -135,6 +149,12 @@ def control_panel(names: list[str]) -> None:
             send("/control/fleet", {"action": "pause"})
         if c2.button("Devam", key="ctl_resume"):
             send("/control/fleet", {"action": "resume"})
+        left = warmup_left()
+        if left:
+            st.warning(
+                f"Isınma sürüyor (tahmin için ≈{left:.0f} simüle saat kaldı). "
+                "Hızı şimdi yavaşlatma: tahmin gecikir."
+            )
         s1, s2 = st.columns(2)
         if s1.button("Hızlı (3600×)", key="ctl_speed_fast", help="1 sn = 1 simüle saat"):
             send("/control/fleet", ctl.speed_payload(ctl.SPEED_FAST))

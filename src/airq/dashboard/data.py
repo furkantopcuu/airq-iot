@@ -41,7 +41,18 @@ def latest_forecasts(rows: list[dict]) -> dict[int, dict]:
     return out
 
 
-def station_card(info: dict, forecast_rows: list[dict]) -> dict:
+def warmup_left_hours(until: str | None, sim_now: str | None) -> float | None:
+    """Simulated hours until the forecaster has its history (None: not warming up / unknown)."""
+    if not until or not sim_now:
+        return None
+    try:
+        left = (_dt(until) - _dt(sim_now)).total_seconds() / 3600
+    except ValueError:
+        return None
+    return left if left > 0 else None
+
+
+def station_card(info: dict, forecast_rows: list[dict], warmup_left: float | None = None) -> dict:
     """Everything one network card shows: status, last value, band, 6 h forecast, warning badge."""
     f6 = latest_forecasts(forecast_rows).get(6)
     return {
@@ -53,6 +64,7 @@ def station_card(info: dict, forecast_rows: list[dict]) -> dict:
         "band": aqi_band(info.get("last_pm25")),
         "forecast6": f6["yhat"] if f6 else None,
         "forecast6_band": aqi_band(f6["yhat"]) if f6 else dict(UNKNOWN_BAND),
+        "warmup_left": None if f6 else warmup_left,
         "n_neighbors": f6["n_neighbors"] if f6 else None,
         "warning": info.get("active_warnings", 0) > 0,
         "n_warnings": info.get("active_warnings", 0),
@@ -67,6 +79,9 @@ def card_html(card: dict) -> str:
     b, fb = card["band"], card["forecast6_band"]
     last = "—" if card["last_pm25"] is None else f"{card['last_pm25']:.0f}"
     f6 = "—" if card["forecast6"] is None else f"{card['forecast6']:.0f}"
+    unit = "µg/m³"
+    if card["forecast6"] is None and card.get("warmup_left"):
+        f6, unit = "ısınıyor", f"(tahmin ≈{card['warmup_left']:.0f} simüle saat sonra)"
     dot = "● çevrimiçi" if card["online"] else "○ çevrimdışı"
     badge = (
         "<div style='background:#000;color:#fff;padding:2px 8px;margin-top:6px;"
@@ -89,7 +104,7 @@ def card_html(card: dict) -> str:
         f"<span style='font-size:1.8em;font-weight:800'>{last}</span> "
         f"µg/m³ · {esc(b['label'])}</div>"
         f"<div style='margin-top:4px'>6 saat sonra: <b style='background:{fb['color']};"
-        f"color:{fb['text']};padding:0 6px;border-radius:3px'>{f6} µg/m³</b></div>"
+        f"color:{fb['text']};padding:0 6px;border-radius:3px'>{f6} {unit}</b></div>"
         f"{badge}{flags}</div>"
     )
 
