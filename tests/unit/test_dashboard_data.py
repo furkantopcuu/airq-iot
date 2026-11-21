@@ -44,7 +44,14 @@ def test_station_card_combines_status_value_forecast_and_warning():
 def test_card_html_shows_the_warning_badge_only_when_warned_and_never_relies_on_colour_alone():
     info = {"station": "Dongsi", "status": "online", "last_pm25": 90.0, "active_warnings": 1}
     html = dash.card_html(dash.station_card(info, []))
-    assert "UYARI (1)" in html and "Dongsi" in html and "çevrimiçi" in html and "µg/m³" in html
+    assert (
+        "UYARI" in html
+        and "1 kayıt" in html
+        and "son 24 sa" in html
+        and "Dongsi" in html
+        and "çevrimiçi" in html
+        and "µg/m³" in html
+    )
     assert "Hafif kirli" in html  # the band is named in text as well as coloured
     quiet = dash.card_html(dash.station_card({**info, "active_warnings": 0}, []))
     assert "UYARI" not in quiet
@@ -153,10 +160,42 @@ def test_a_card_says_warming_up_until_the_forecaster_has_its_history():
     left = dash.warmup_left_hours(until, now)
     assert left == 96.0
     html = dash.card_html(dash.station_card(info, [], left))
-    assert "ısınıyor" in html and "96" in html and "—" not in html.split("6 saat sonra")[1][:80]
+    assert "ısınıyor" in html and "96" in html
     assert dash.warmup_left_hours(until, "2017-01-03T00:00:00") is None  # warm-up over
     assert dash.warmup_left_hours(None, now) is None and dash.warmup_left_hours(until, None) is None
     assert dash.warmup_left_hours("not a time", now) is None
     # a forecast present: the normal number, no warm-up text
     row = {"horizon": 6, "yhat": 80.0, "made_at_ts": "2016-12-29T16:00:00", "n_neighbors": 11}
     assert "ısınıyor" not in dash.card_html(dash.station_card(info, [row], left))
+
+
+def test_cards_show_all_three_forecasts_and_the_legend_names_every_class():
+    from airq.dashboard import data as dash
+
+    info = {"station": "Dongsi", "status": "online", "last_pm25": 90.0, "active_warnings": 0}
+    rows = [_fc(3, 1, 80.0), _fc(3, 6, 120.0), _fc(3, 24, 260.0)]
+    html = dash.card_html(dash.station_card(info, rows))
+    assert "+1 sa" in html and "+6 sa" in html and "+24 sa" in html and "260" in html
+    legend = dash.legend_html()
+    for band in dash.AQI_BANDS:
+        assert band["label"] in legend
+    assert "≤ 35" in legend and "> 250" in legend and "76–115" in legend
+
+
+def test_status_messages_tell_the_operator_what_is_going_on():
+    from airq.dashboard import data as dash
+
+    def card(online):
+        return {"online": online}
+
+    levels = lambda msgs: [lvl for lvl, _ in msgs]  # noqa: E731
+    assert levels(dash.status_messages([card(True)], {"fleet": {"speedup": 3600}}, None)) == [
+        "success"
+    ]
+    assert levels(dash.status_messages([card(False)], {}, None)) == ["warning"]  # nobody online
+    assert levels(dash.status_messages([card(True)], {"fleet": {"paused": True}}, None)) == [
+        "warning"
+    ]
+    warm = dash.status_messages([card(True)], {}, 96.0)
+    assert levels(warm) == ["info"] and "96" in warm[0][1]
+    assert dash.status_messages([], {}, None) == []

@@ -133,9 +133,9 @@ def test_every_page_renders_without_errors_against_the_real_api(live_api):
 def test_live_page_shows_cards_counts_and_the_station_chart(live_api):
     at = _run(live_api)
     html = " ".join(m.value for m in at.markdown)
-    assert "Dongsi" in html and "Huairou" in html and "UYARI (1)" in html
+    assert "Dongsi" in html and "Huairou" in html and "UYARI" in html and "1 kayıt" in html
     metrics = {m.label: m.value for m in at.metric}
-    assert metrics["Çevrimiçi cihaz"] == "2" and metrics["Aktif uyarı"] == "1"
+    assert metrics["Çevrimiçi cihaz"] == "2 / 2" and metrics["Uyarı veren istasyon"] == "1 / 2"
     assert len(at.get("plotly_chart")) >= 1
 
 

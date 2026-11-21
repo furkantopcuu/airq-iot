@@ -53,17 +53,19 @@ def warmup_left_hours(until: str | None, sim_now: str | None) -> float | None:
 
 
 def station_card(info: dict, forecast_rows: list[dict], warmup_left: float | None = None) -> dict:
-    """Everything one network card shows: status, last value, band, 6 h forecast, warning badge."""
-    f6 = latest_forecasts(forecast_rows).get(6)
+    """Everything one network card shows: status, last value, band, forecasts, warning badge."""
+    latest = latest_forecasts(forecast_rows)
+    f6 = latest.get(6)
+    last = info.get("last_pm25")
     return {
         "station": info["station"],
         "online": info.get("status") == "online",
-        "status": info.get("status") or "bilinmiyor",
         "last_ts": info.get("last_ts"),
-        "last_pm25": info.get("last_pm25"),
-        "band": aqi_band(info.get("last_pm25")),
+        "last_pm25": last,
+        "band": aqi_band(last),
         "forecast6": f6["yhat"] if f6 else None,
         "forecast6_band": aqi_band(f6["yhat"]) if f6 else dict(UNKNOWN_BAND),
+        "forecasts": {h: latest[h]["yhat"] for h in HORIZONS if h in latest},
         "warmup_left": None if f6 else warmup_left,
         "n_neighbors": f6["n_neighbors"] if f6 else None,
         "warning": info.get("active_warnings", 0) > 0,
@@ -72,21 +74,65 @@ def station_card(info: dict, forecast_rows: list[dict], warmup_left: float | Non
     }
 
 
+WARNING_HELP = (
+    "Son 24 simüle saatte bu istasyon için üretilen uyarı kayıtlarının sayısı. Her kayıt bir ufuk "
+    "(1, 6 ya da 24 saat) ve bir eşik (75 ya da 150 µg/m³) çiftidir; bu yüzden tek bir kirlilik "
+    "dalgası birden çok kayıt üretir. Ayrı ayrı görmek için Uyarılar sayfasına bak."
+)
+
+
+def legend_html() -> str:
+    """The colour key of the cards: PM2.5 ranges (µg/m³) and the class name, text beside colour."""
+    edges = [0, *AQI_BOUNDS]
+    parts = []
+    for i, band in enumerate(AQI_BANDS):
+        lo = edges[i]
+        rng = (
+            f"≤ {AQI_BOUNDS[0]}"
+            if i == 0
+            else (f"> {AQI_BOUNDS[-1]}" if i == len(AQI_BANDS) - 1 else f"{lo + 1}–{AQI_BOUNDS[i]}")
+        )
+        parts.append(
+            f"<span style='background:{band['color']};color:{band['text']};padding:2px 8px;"
+            f"border-radius:4px;margin:0 6px 4px 0;display:inline-block;white-space:nowrap'>"
+            f"{html.escape(band['label'])} <b>{rng}</b></span>"
+        )
+    return "<div style='font-size:0.8em'>PM2.5 (µg/m³) sınıfları: " + "".join(parts) + "</div>"
+
+
 def card_html(card: dict) -> str:
     """HTML of one card (large font, high contrast, status in text as well as colour)."""
     # station names, flags and labels travel through MQTT: they are DATA, never markup
     esc = html.escape
-    b, fb = card["band"], card["forecast6_band"]
+    b = card["band"]
     last = "—" if card["last_pm25"] is None else f"{card['last_pm25']:.0f}"
-    f6 = "—" if card["forecast6"] is None else f"{card['forecast6']:.0f}"
-    unit = "µg/m³"
-    if card["forecast6"] is None and card.get("warmup_left"):
-        f6, unit = "ısınıyor", f"(tahmin ≈{card['warmup_left']:.0f} simüle saat sonra)"
     dot = "● çevrimiçi" if card["online"] else "○ çevrimdışı"
+    chips = ""
+    for h in HORIZONS:
+        v = card.get("forecasts", {}).get(h)
+        if v is None and h == 6 and card.get("forecast6") is not None:
+            v = card["forecast6"]
+        if v is None:
+            continue
+        fb = aqi_band(v)
+        chips += (
+            f"<span title='{h} saat sonrası için tahmin ({esc(fb['label'])})' "
+            f"style='background:{fb['color']};color:{fb['text']};padding:1px 6px;"
+            f"border-radius:3px;margin-right:4px;white-space:nowrap'>+{h} sa <b>{v:.0f}</b></span>"
+        )
+    if not chips:
+        if card.get("warmup_left"):
+            chips = (
+                "<i>ısınıyor</i> <span style='font-size:0.8em'>"
+                f"(tahmin ≈{card['warmup_left']:.0f} simüle saat sonra)</span>"
+            )
+        else:
+            chips = "—"
     badge = (
-        "<div style='background:#000;color:#fff;padding:2px 8px;margin-top:6px;"
-        "display:inline-block;border-radius:4px;font-weight:700'>"
-        f"⚠ UYARI ({card['n_warnings']})</div>"
+        f"<div title='{esc(WARNING_HELP)}' style='background:#000;color:#fff;padding:2px 8px;"
+        "margin-top:6px;display:inline-block;border-radius:4px'>"
+        f"<b>⚠ UYARI</b> <span style='font-size:0.8em'>{card['n_warnings']} kayıt · son 24 sa"
+        "</span></div>"
         if card["warning"]
         else ""
     )
@@ -98,15 +144,49 @@ def card_html(card: dict) -> str:
     return (
         f"<div style='border:3px solid {b['color']};border-radius:8px;"
         "padding:8px 10px;margin-bottom:8px'>"
-        f"<div style='font-size:1.15em;font-weight:700'>{esc(str(card['station']))} "
-        f"<span style='font-size:0.75em;font-weight:400'>{dot}</span></div>"
-        f"<div style='background:{b['color']};color:{b['text']};padding:4px 8px;border-radius:4px'>"
-        f"<span style='font-size:1.8em;font-weight:800'>{last}</span> "
-        f"µg/m³ · {esc(b['label'])}</div>"
-        f"<div style='margin-top:4px'>6 saat sonra: <b style='background:{fb['color']};"
-        f"color:{fb['text']};padding:0 6px;border-radius:3px'>{f6} {unit}</b></div>"
+        f"<div style='font-size:1.1em;font-weight:700'>{esc(str(card['station']))}</div>"
+        f"<div style='font-size:0.75em'>{dot}</div>"
+        f"<div style='background:{b['color']};color:{b['text']};padding:4px 8px;"
+        f"border-radius:4px;margin-top:4px'><span style='font-size:1.8em;font-weight:800'>{last}"
+        f"</span> <span style='font-size:0.8em'>µg/m³</span><br>"
+        f"<span style='font-size:0.85em'>{esc(b['label'])}</span></div>"
+        f"<div style='margin-top:6px;font-size:0.85em'>Tahmin (µg/m³): {chips}</div>"
         f"{badge}{flags}</div>"
     )
+
+
+def status_messages(
+    cards: list[dict], state: dict | None, warmup_left: float | None
+) -> list[tuple[str, str]]:
+    """What the operator must know right now, as (level, text) with level info|warning|success."""
+    out: list[tuple[str, str]] = []
+    fleet = (state or {}).get("fleet") or {}
+    online = sum(c["online"] for c in cards)
+    if cards and online == 0:
+        out.append(
+            (
+                "warning",
+                "Hiçbir cihaz çevrimiçi değil: veri tekrarı bitmiş ya da filo durmuş olabilir. "
+                "Yeniden başlatmak için demoyu kapatıp `demo.ps1 -StopOld` çalıştır.",
+            )
+        )
+    elif fleet.get("paused"):
+        out.append(("warning", "Filo duraklatıldı: yeni ölçüm gelmiyor. Filo > Devam ile sürdür."))
+    if warmup_left:
+        out.append(
+            (
+                "info",
+                "Tahmin modeli ısınıyor: 240 simüle saatlik geçmiş gerekir, "
+                f"≈{warmup_left:.0f} saat kaldı. Bu sürede kartlarda tahmin görünmez; "
+                "hızı yavaşlatma.",
+            )
+        )
+    if not out and cards:
+        speed = fleet.get("speedup")
+        what = "1 sn = 1 simüle saat" if speed and speed >= 1000 else "yavaş, gerçekçi hız"
+        pace = f" Hız {speed:g}× ({what})." if speed else ""
+        out.append(("success", f"Çalışıyor: {online} / {len(cards)} cihaz çevrimiçi.{pace}"))
+    return out
 
 
 def _dt(s: str) -> datetime:

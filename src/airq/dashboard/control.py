@@ -16,6 +16,15 @@ MODE_LABELS = {
     "offline": "Cihazı düşür (offline)",
     "replay": "Kayıtlı veriye dön (replay)",
 }
+MODE_HELP = {
+    "manual": "Ölçümü sabit bir değere kilitler.",
+    "offset": "Gerçek ölçüme sabit bir miktar ekler.",
+    "scale": "Gerçek ölçümü bir çarpanla büyütür ya da küçültür.",
+    "ramp": "Ölçümü zamanla bir hedefe doğru yükseltir (ya da artırır).",
+    "perturb": "Sensör hatası taklidi: ani sıçrama, takılı kalma ya da kesinti.",
+    "offline": "Cihaz haber vermeden susar; broker 'çevrimdışı' duyurur.",
+    "replay": "Müdahaleyi bırakır; cihaz kayıtlı veriyi oynamaya döner.",
+}
 PERTURB_LABELS = {"spike": "Ani sıçrama (spike)", "stuck": "Takılı kalma (stuck)",
                   "dropout": "Kesinti (dropout)"}  # fmt: skip
 ALL = "all"
