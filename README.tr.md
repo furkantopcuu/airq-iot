@@ -241,7 +241,7 @@ Metindeki her sayı `reports/`'tan üretilen bir makrodur (`python -m scripts.ma
 [paper/NUMBERS.md](paper/NUMBERS.md) her makronun dosyasını, satır seçicisini ve sütununu verir).
 `python -m scripts.check_paper` LaTeX kurulu olmadan kaynağı denetler. Kaynakça Crossref, DataCite ve
 arXiv ile doğrulandı ([docs/makale_kaynak.md](docs/makale_kaynak.md)).
-`paper/main.pdf` derlenmiş taslaktır (Overleaf; şu an 10 sayfa, 6–8 sayfa hedefine kırpılacak).
+`paper/main.pdf` derlenmiş taslaktır (Overleaf; 8 sayfa, 6–8 sayfa hedefi içinde).
 
 ## Testler
 

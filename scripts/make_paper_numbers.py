@@ -129,7 +129,11 @@ def dataset(cfg: dict) -> None:
     cell("nDataMissingPct", f, "pm25_missing_pct", ".2f", station="ALL")
     cell("nDataMean", f, "pm25_mean", ".1f", station="ALL")
     cell("nDataPNinetyFive", f, "pm25_p95", ".0f", station="ALL")
-    cell("nPmInconsistentPct", "physical_consistency", "pct_pm25_gt_pm10", ".1f", station="ALL")
+    # NOTE: physical_consistency.csv is computed on the TRAINING split only (257,751 pairs), where the
+    # share is 8.2 %; over the whole dataset it is 5.2 %. The macro name says which one the paper quotes.
+    cell(
+        "nPmInconsistentTrainPct", "physical_consistency", "pct_pm25_gt_pm10", ".1f", station="ALL"
+    )
     df = table(f)
     put("nDataStations", float((df.station != "ALL").sum()), ".0f", "reports/tables/dataset_summary.csv",
         "station != ALL", "station", "derived: count")  # fmt: skip
@@ -276,6 +280,7 @@ def rq1() -> None:
     )
     agg("nLosoStations", "rq1_loso", "station", "count", ".0f", h=1)
     cell("nNowcastRmse", "rq1_nowcast", "rmse", ".1f", h=0)
+    cell("nTuneGainTenTwenty", "rq1_tuning_convergence", "gain_10_to_20_pct", ".1f", study="MEAN")
 
 
 def rq2() -> None:
@@ -550,13 +555,45 @@ def config_and_env(cfg: dict) -> None:
         ("nSpeedSlow", cfg["bench"]["speedup"][0], "bench.speedup[0]"),
         ("nSpeedFast", cfg["bench"]["speedup"][1], "bench.speedup[1]"),
         ("nReps", cfg["bench"]["repeats"], "bench.repeats"),
+        ("nFfillLimit", cfg["data"]["ffill_limit"], "data.ffill_limit"),
+        ("nHazeMinStations", cfg["episodes"]["haze"]["min_stations"], "episodes.haze.min_stations"),
+        ("nHazeMinHours", cfg["episodes"]["haze"]["min_hours"], "episodes.haze.min_hours"),
+        (
+            "nEventMinHours",
+            cfg["episodes"]["exceedance"]["min_hours"],
+            "episodes.exceedance.min_hours",
+        ),
+        (
+            "nEventMergeGapH",
+            cfg["episodes"]["exceedance"]["merge_gap_h"],
+            "episodes.exceedance.merge_gap_h",
+        ),
+        ("nWarnWindowH", cfg["warning"]["window_h"], "warning.window_h"),
+        ("nQuantLow", cfg["forecast"]["quantiles"][0], "forecast.quantiles[0]"),
+        ("nQuantMid", cfg["forecast"]["quantiles"][1], "forecast.quantiles[1]"),
+        ("nQuantHigh", cfg["forecast"]["quantiles"][2], "forecast.quantiles[2]"),
         ("nKThree", cfg["forecast"]["neighbor_k"][1], "forecast.neighbor_k[1]"),
         ("nKEleven", cfg["forecast"]["neighbor_k"][2], "forecast.neighbor_k[2]"),
         ("nSimDays", cfg["bench"]["sim_days"], "bench.sim_days"),
     ]
     for name, value, key in items:
-        put(name, float(value), ".0f", "configs/default.yaml", key, "value", "config")
+        fmt = (
+            ".0f" if float(value).is_integer() else ".1f"
+        )  # quantiles 0.1 / 0.5 / 0.9 keep their decimal
+        put(name, float(value), fmt, "configs/default.yaml", key, "value", "config")
     env = json.loads((ROOT / "reports" / "bench" / "env.json").read_text(encoding="utf-8"))
+    unc = json.loads(
+        (ROOT / "reports" / "metrics" / "uncertainty_test.json").read_text(encoding="utf-8")
+    )
+    put(
+        "nTargetCoverage",
+        float(unc["target_coverage"]),
+        ".2f",
+        "reports/metrics/uncertainty_test.json",
+        "target_coverage",
+        "target_coverage",
+        "cell",
+    )
     put(
         "nCpuCount",
         float(env["cpu_count"]),

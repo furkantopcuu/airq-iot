@@ -13,7 +13,7 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 
 ### Python
 - Ne: Projenin tüm kodunu yazdığımız programlama dili.
-- Neden: ML (LightGBM, pandas), IoT (paho-mqtt) ve web (FastAPI) kütüphaneleri tek dilde; Colab'da hazır gelir.
+- Neden: ML (LightGBM, pandas), IoT (paho-mqtt) ve web (FastAPI) kütüphaneleri tek dilde; kurulumu tek komut.
 - Alternatifler ve neden seçilmedi: Java/C++ (ML ekosistemi zayıf), Node.js (veri bilimi araçları sınırlı).
 - Projede nerede: `src/airq/`
 - Sunumda tek cümle: Veri bilimi ve IoT araçlarının hepsi tek dilde olduğu için Python seçtik.
@@ -62,7 +62,7 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 
 ### Komşu istasyon özellikleri
 - Ne: Bir istasyonun tahminine, diğer istasyonların o anki PM2.5 ortalaması, medyanı, eğimi ve kaç komşudan veri geldiği gibi özetleri ekliyoruz.
-- Neden: Kirlilik dalgaları şehirde istasyondan istasyona yayılır; komşuları görmek özellikle 6 ve 24 saat sonrasını tahmin etmeyi kolaylaştırması beklenir (ölçülmeden iddia edilmez, ablasyonla test edilecek). Komşu eksikse hesaba katılmaz; kaç komşu olduğu da özellik olduğundan ağ kopmasının etkisi ölçülebilir.
+- Neden: Kirlilik dalgaları şehirde istasyondan istasyona yayılır; komşuları görmek özellikle 6 ve 24 saat sonrasını tahmin etmeyi kolaylaştırması beklenir (ablasyonla ölçüldü: 1 saatte %4,3 ve 6 saatte %4,7 anlamlı kazanç, 24 saatte %0,3 ve anlamsız; `FINDINGS.md`). Komşu eksikse hesaba katılmaz; kaç komşu olduğu da özellik olduğundan ağ kopmasının etkisi ölçülebilir.
 - Alternatifler ve neden seçilmedi: Grafik sinir ağları (GNN [R11][R12]): koordinat yok, süre ve açıklanabilirlik maliyeti yüksek; açık komşu özellikleri hafif bir yaklaşık.
 - Projede nerede: `src/airq/features/build.py`, `neighbors.py`
 - Sunumda tek cümle: Komşu istasyonları özellik olarak veriyoruz; faydasını komşusuz modelle karşılaştırarak ölçüyoruz.
@@ -83,7 +83,7 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 
 ### Model manifest ve LightGBM metin formatı
 - Ne: Modeli pickle yerine LightGBM'in kendi metin dosyasıyla saklıyor, yanına özellik listesi ve sürüm bilgisini yazıyoruz.
-- Neden: Farklı ortamda (Colab, laptop) eğitilen modelin yanlış özelliklerle yüklenip sessizce kötü tahmin üretmesini önler; uyuşmazlıkta açık hata verir. Pickle sürümler arası kırılgandır.
+- Neden: Başka bir bilgisayarda ya da eski bir sürümle eğitilen modelin yanlış özelliklerle yüklenip sessizce kötü tahmin üretmesini önler; uyuşmazlıkta açık hata verir. Pickle sürümler arası kırılgandır.
 - Alternatifler ve neden seçilmedi: Pickle/joblib (sürüm ve güvenlik riski), manifest'siz kayıt (sessiz hata).
 - Projede nerede: `src/airq/models/manifest.py`
 - Sunumda tek cümle: Modelin hangi özelliklerle eğitildiğini kayıt altında tutuyoruz; uyuşmazsa sistem hata verip duruyor.
@@ -97,7 +97,7 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 
 ### QoS 1 ve idempotent kayıt
 - Ne: Telemetri "en az bir kez" teslim edilir; alınmazsa yeniden gönderilir.
-- Neden: Hava kalitesi ölçümü kaybolursa tahmin eksik veriyle çalışır; QoS 0'da ağ kaybında mesaj sessizce gider. Bedeli, aynı mesajın iki kez gelebilmesidir; bunu `(istasyon, ts)` anahtarıyla yapılan idempotent kayıt zararsız hale getirecek (Gün 6) ve tekrar oranını ölçeceğiz [R7].
+- Neden: Hava kalitesi ölçümü kaybolursa tahmin eksik veriyle çalışır; QoS 0'da ağ kaybında mesaj sessizce gider. Bedeli, aynı mesajın iki kez gelebilmesidir; bunu `(istasyon, ts)` anahtarıyla yapılan idempotent kayıt zararsız hale getirir; RQ3a'da tekrar oranı her koşuda sıfır ölçüldü [R7].
 - Alternatifler ve neden seçilmedi: QoS 0 (kayıp), QoS 2 (iki aşamalı, fazla yük; saatlik veride gereksiz).
 - Projede nerede: `src/airq/iot/topics.py` (QoS tablosu)
 - Sunumda tek cümle: Mesaj kaybolmasın diye QoS 1 kullandık, olası tekrarı kayıt anında eliyoruz.
@@ -132,24 +132,24 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 
 ### PM2.5 ≤ PM10 fiziksel tutarlılık kuralı
 - Ne: PM2.5 (ince partikül) tanım gereği PM10'un (kaba+ince) bir parçasıdır; PM2.5'in PM10'dan belirgin büyük çıkması ölçüm hatasıdır.
-- Neden: Literatürde nadiren açıkça kullanılır. Ancak gerçek veride PM2.5 > PM10 satırları %8,2; bu yüzden katı kural çok yanlış alarm verirdi. Toleransı (ε=0,1 ve c≈98,85) train'de kalan %0,1'lik uç değerlere göre seçtik; kural yalnızca belirgin tutarsızlıkları yakalar.
+- Neden: Literatürde nadiren açıkça kullanılır. Ancak eğitim döneminde PM2.5 > PM10 olan satırlar %8,2 (tüm veride %5,2); bu yüzden katı kural çok yanlış alarm verirdi. Toleransı (ε=0,1 ve c≈98,85) train'de kalan %0,1'lik uç değerlere göre seçtik; kural yalnızca belirgin tutarsızlıkları yakalar.
 - Alternatifler ve neden seçilmedi: Katı `PM2.5 ≤ PM10` (%8 yanlış alarm), kuralı hiç kullanmamak (bu hata türü kaçar).
 - Projede nerede: `src/airq/edge/quality.py` (`PM_INCONSISTENT`)
 - Sunumda tek cümle: Gerçek veride ince partikül bazen kaba partikülden büyük çıkıyor; toleransı veriden ölçüp kuralı ona göre gevşettik.
 
 ### SQLite (ve neden PostgreSQL/TimescaleDB değil)
 - Ne: Tek dosyalık, kurulum gerektirmeyen veritabanı; WAL modunda yazıcı ve okuyucu aynı anda çalışabilir.
-- Neden: Bir şehir ağı için saatte 12 satırlık yük SQLite'a çok küçük; ayrı sunucu kurmadan Windows, CI ve Colab'da aynı şekilde çalışır. Tek yazıcı (ingest) kuralıyla yarış durumu yoktur; API salt-okunur bağlantı kullanır.
-- Alternatifler ve neden seçilmedi: PostgreSQL/TimescaleDB (ayrı sunucu, kurulum ve bakım; bu ölçekte fayda yok, kapsam dışı). Ölçeklenme sınırı makalede açıkça yazılacak.
+- Neden: Bir şehir ağı için saatte 12 satırlık yük SQLite'a çok küçük; ayrı sunucu kurmadan Windows'ta ve CI'da (Ubuntu) aynı şekilde çalışır. Tek yazıcı (ingest) kuralıyla yarış durumu yoktur; API salt-okunur bağlantı kullanır.
+- Alternatifler ve neden seçilmedi: PostgreSQL/TimescaleDB (ayrı sunucu, kurulum ve bakım; bu ölçekte fayda yok, kapsam dışı). Ölçeklenme sınırı makalede (Sınırlamalar) açıkça yazıldı.
 - Projede nerede: `src/airq/server/db.py`, `ingest.py`
 - Sunumda tek cümle: Yükümüz saatte 12 satır; ayrı veritabanı sunucusu kurmak yerine WAL modundaki SQLite yetiyor, ölçek sınırını da açıkça belirtiyoruz.
 
-### Google Colab ve ince notebook'lar
-- Ne: Tüm mantık `src/airq/` paketindedir; notebook'lar yalnızca paket fonksiyonlarını çağırır.
-- Neden: GitHub'a gelen biri "Open in Colab" ile sonuçları tarayıcıda yeniden üretebilir; laptop yetmezse Colab yedek ortam olur. Mantığı notebook'a gömseydik iki kopya oluşur, biri bozulurdu. `AIRQ_FIXTURE=1` küçük sentetik veriyle notebook'ları internetsiz (CI'da) çalıştırır.
-- Alternatifler ve neden seçilmedi: Mantığı notebook'ta yazmak (kopya ve sürüm kayması), Colab'ı hiç desteklememek (yeniden üretilebilirlik zayıflar).
+### İnce notebook'lar (ve neden Colab iddia edilmiyor)
+- Ne: Tüm mantık `src/airq/` paketindedir; notebook'lar yalnızca paket fonksiyonlarını çağırır (`scripts/build_notebooks.py` üretir).
+- Neden: Mantığı notebook'a gömseydik iki kopya oluşur, biri sessizce bozulurdu; ince notebook'larda tek kopya vardır. `AIRQ_FIXTURE=1` küçük sentetik veriyle notebook'ları internetsiz (CI'da) çalıştırır, böylece her değişiklikte denenirler. Google Colab desteği kapsam dışı bırakıldı (kullanıcı kararı, 2026-11-20): kod yolları durur ama Colab'da doğrulanmadığı için README ve makale Colab desteği iddia etmez.
+- Alternatifler ve neden seçilmedi: Mantığı notebook'ta yazmak (kopya ve sürüm kayması), Colab'ı doğrulamadan "destekliyoruz" demek (kanıtsız iddia).
 - Projede nerede: `notebooks/`, `scripts/build_notebooks.py`, `src/airq/pipelines/colab.py`, `src/airq/data/fixture.py`
-- Sunumda tek cümle: Notebook'lar ince; aynı kod hem laptopta hem Colab'da çalışıyor ve CI'da sentetik veriyle her değişiklikte deneniyor.
+- Sunumda tek cümle: Notebook'lar ince; aynı paket kodunu çağırıyor ve CI'da sentetik veriyle her değişiklikte deneniyor; Colab'ı doğrulamadığımız için iddia etmiyoruz.
 
 ### Canlı predictor, komşu bekleme süresi ve parite testi
 - Ne: Edge'den gelen ölçümleri bir kayan tamponda biriktirir, eğitimdekiyle aynı özellik fonksiyonunu çalıştırır ve 1/6/24 saat sonrasını tahmin eder. Her saatte diğer istasyonların ölçümünü en çok `predictor_wait_ms` (500 ms) bekler; gelmeyen istasyon "eksik" sayılır.
@@ -263,3 +263,31 @@ RmseMtwobHOne`); makrolar `paper/numbers.tex` dosyasına `reports/tables/*.csv` 
 - Alternatifler ve neden seçilmedi: Künyeleri hafızadan yazmak (hata ve uydurma riski), yalnızca Ek A'ya güvenmek (R18 hatası kalırdı).
 - Projede nerede: `paper/refs.bib`, `docs/makale_kaynak.md`
 - Sunumda tek cümle: Her kaynağın künyesini yayıncının kayıt sisteminden doğruladık; Ek A'daki bir yazar adı hatası böyle düzeldi.
+
+### Optuna (TPE) ile hiperparametre araması
+- Ne: LightGBM'in ayarlarını (yaprak sayısı, öğrenme hızı, düzenleme gibi) doğrulama verisinde, önceki denemelerden öğrenen bir yöntemle (TPE) arayan kütüphane; her ufuk ve komşu sayısı için ayrı bir çalışma, çalışma başına 20 deneme.
+- Neden: Varsayılan ayarlar iyi ama en iyisi değil (h=1/k=0 çalışmasında varsayılana göre doğrulama RMSE'si %3,0 düştü: 22,55 → 21,87). Izgara araması çok pahalıdır, rastgele arama geçmişten öğrenmez; TPE az denemede iyi sonuca varır. Seçim yalnızca doğrulamada yapılır, test'e hiç bakılmaz. Bütçeyi 20'de bıraktık çünkü arama yakınsadı: 9 çalışmada 10. ile 20. deneme arasındaki ortalama kazanç %0,5 (`reports/tables/rq1_tuning_convergence.csv`); 40 deneme koşulan tek çalışmada en iyi sonuç ilk 20'de bulundu. Sonuçlar tekrar üretilebilir: temiz bir çalışma deposuyla 9 çalışmanın 8'i birebir tekrarlandı, dokuzuncusunun kayıtlı çalışmada yarım kalmış bir denemeden saptığı bulundu ve düzeltildi.
+- Alternatifler ve neden seçilmedi: Izgara (ayar sayısıyla üstel büyür), rastgele arama (geçmişten öğrenmez), elle ayar (tekrar edilemez ve test'e bakma riski), 40 deneme (kazanç ölçüm gürültüsünün altında, her sayıyı yeniden üretmeyi gerektirirdi).
+- Projede nerede: `src/airq/pipelines/tuning.py`, `scripts/tuning_convergence.py`, `reports/tables/rq1_tuning.csv`
+- Sunumda tek cümle: Ayarları test'e bakmadan, yalnızca doğrulamada ve 20 denemeyle seçtik; 10'dan 20'ye çıkmanın kazancı %0,5 olduğu için daha fazla denemedik.
+
+### Sürüm paketleri, sağlama toplamı ve `fetch_release`
+- Ne: Eğitilmiş modeller ve kayıtlı bir demo koşusu depoya değil GitHub Release'e yüklenir (`airq_models.zip`, `demo_recorded.db`); `fetch_release` bunları indirir, SHA-256 sağlama toplamını `configs/release.yaml`'daki değerle karşılaştırır ve zip içindeki yollar hedef klasörün dışına çıkıyorsa reddeder.
+- Neden: Depo küçük kalır (>5 MB dosya yok) ama jüri veya yeni bir kullanıcı ham veri ve eğitim beklemeden demoyu açabilir. Sağlama toplamı, bozuk ya da değiştirilmiş bir dosyanın sessizce kullanılmasını engeller; hedef klasörün dışına yazmaya çalışan yollar içeren bir zip dosyası (zip-slip saldırısı) reddedilir.
+- Alternatifler ve neden seçilmedi: Modelleri depoya eklemek (boyut ve geçmiş şişer), sağlama toplamsız indirme (bozuk dosya fark edilmez), Git LFS (ek kurulum).
+- Projede nerede: `src/airq/pipelines/release.py`, `scripts/fetch_release.py`, `scripts/make_release_assets.py`, `configs/release.yaml`
+- Sunumda tek cümle: Büyük dosyaları Release'e koyduk ve indirirken sağlama toplamıyla doğruluyoruz; böylece depo küçük, demo ise tek komut.
+
+### Güvenlik sertleştirme (yerel kullanım için)
+- Ne: Broker, API ve pano yalnızca `127.0.0.1`'de dinler; API yalnızca yerel `Host` başlıklarını kabul eder ve yerel olmayan bir `Origin` ile gelen durum değiştiren istekleri reddeder (DNS rebinding ve CSRF); MQTT'den gelen istasyon adı ve etiketler panoda HTML'e kaçışlanır; `.gitignore` gizli anahtar dosyalarını engeller; tarama (`bandit`, `pip-audit`, `detect-secrets`) CI'dadır.
+- Neden: Komut kanalı kimlik doğrulamasızdır (bilinen sınırlama), bu yüzden tek koruma onu dış dünyaya açmamaktır. Güvenlik denetimi gerçek açıklar buldu: pano MQTT'den gelen metni HTML'e ham basıyordu (XSS), Streamlit ağa açık dinleyebiliyordu, API'de Host/Origin denetimi yoktu; üçü düzeltildi ve testlerle (`tests/unit/test_security.py`) korunuyor. Tam geçmiş taramasında hiçbir zaman gizli anahtar ya da `.env` commit'lenmediği görüldü.
+- Alternatifler ve neden seçilmedi: Tam kimlik doğrulama ve TLS (bu proje yerel bir öğretim sistemi; gerçek dağıtım için gelecek çalışma), güvenliği hiç ele almamak (jüri sorusu ve gerçek açıklar).
+- Projede nerede: `src/airq/server/api.py`, `src/airq/dashboard/data.py`, `.streamlit/config.toml`, `SECURITY.md`, `tests/unit/test_security.py`
+- Sunumda tek cümle: Sistem kimlik doğrulamasız olduğu için yalnızca yerel makineye açık; bunu testle koruyoruz ve bir güvenlik taramasında bulduğumuz üç açığı düzelttik.
+
+### Kalite kapıları: mypy, kapsama eşiği, dal koruması, Dependabot
+- Ne: Çekirdek modüllerde tip denetimi (`mypy`), test kapsamında alt sınır (%60), `main` için "PR ve yeşil CI" kuralı, bağımlılık güncellemeleri için Dependabot ve sürümleri sabitleyen `constraints.txt`.
+- Neden: Sonuçların "benim makinemde çalıştı"dan öteye geçmesi için hatalar commit'ten önce yakalanmalı. Bu işe yaradı: CI, bir commit'te iki gerçek hata yakaladı (gizli anahtar taramasının yanlış alarmı ve ML kurulumunda MQTT bağımlılığı), ikisi de aynı gün düzeltildi.
+- Alternatifler ve neden seçilmedi: Yalnızca yerel kontrol (unutulur), tüm kodda katı tip denetimi (bu süre içinde gerçekçi değil; çekirdek modüllerle başladık).
+- Projede nerede: `pyproject.toml`, `.github/workflows/ci.yml`, `.github/dependabot.yml`, `constraints.txt`
+- Sunumda tek cümle: Her değişiklikte testler, tip denetimi ve güvenlik taraması çalışıyor; bunlar bir commit'teki iki gerçek hatayı yakaladı.

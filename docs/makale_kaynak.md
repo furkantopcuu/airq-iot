@@ -33,9 +33,9 @@ Notlar:
 | R10 | ✓ | *Sensors* 18(7), 2220, 2018. |
 | R11 | ✓ | KDD 2018, 965–973. |
 | R12 | ✓ | SIGSPATIAL 2020 (28th Int. Conf. on Advances in GIS), 163–166. |
-| R13 | ön baskı | arXiv:2607.07279 doğrulandı: Yusheng Wang, Ruiyan Du; ilk sürüm 2026-07-08, son güncelleme 2026-08-25. arXiv kaydında dergi künyesi veya DOI **yok** → hakemli sürüm bulunamadı; **ön baskı olarak** anıldı (§11.5-3). |
+| R13 | ön baskı | arXiv:2607.07279 doğrulandı: Yusheng Wang, Ruiyan Du; ilk sürüm 2026-07-08, son güncelleme 2026-08-25. arXiv kaydında dergi künyesi veya DOI **yok** → hakemli sürüm bulunamadı; **ön baskı olarak** anıldı (§11.5-3). **Gün 18'de (2026-11-21) arXiv API'si yeniden sorgulandı: hâlâ dergi künyesi/DOI yok, ön baskı olarak kalıyor.** |
 | R14 | ✓ | *Environ. Monit. Assess.* 198(9), Art. 938, 2026. |
-| R15 | doğrula | LightGBM (NeurIPS 2017). Sayfa numarası güvenilir kaynaktan doğrulanamadı → **sayfa verilmedi**; cilt 30, 2017, yazarlar "Ke, Guolin ve ark." (OpenAlex: 8 yazar, ilk üçü Ke, Meng, Finley). |
+| R15 | ✓ (sayfasız) | LightGBM (NeurIPS 2017). **Gün 18'de resmî NeurIPS bildiri sayfasından doğrulandı** (proceedings.neurips.cc): 8 yazar (Ke, Meng, Finley, Wang, Chen, Ma, Ye, Liu), *Advances in Neural Information Processing Systems*, cilt 30, 2017. Resmî sayfa **sayfa numarası yayımlamıyor**; bu yüzden sayfa verilmedi (uydurulmadı). |
 | R16 | ✓ | *Mach. Learn.* 109(11), 1997–2028, 2020. |
 | R17 | ✓ | arXiv:2104.03226 ve **IEEE I2CT 2021, 1–8, doi:10.1109/I2CT51068.2021.9418215** (Crossref; Ek A'nın "başlık doğrula" notu kapandı). |
 | R18 | ✓ (düzeltildi) | **Ek A'daki yazar adları yanlıştı.** Crossref: Vanessa E. Alvear-Puertas, Yadira A. Burbano-Prado, Paul D. Rosero-Montalvo, Pınar Tözün, Fabricio Marcillo, Wilmar Hernandez (Ek A: "J. … P. …"). *Sensors* 22(18), 7015, 2022. |
@@ -46,12 +46,12 @@ Notlar:
 | R23 | kullanılmadı | Kapalı alan CO₂ (P2) görevi yapılmadı; `refs.bib`'e **girmedi**. |
 | R24 | ✓ | DM, *J. Bus. Econ. Stat.* 13(3), 253–263, 1995, **doi:10.1080/07350015.1995.10524599**. |
 | R25 | ✓ | HLN, *Int. J. Forecast.* 13(2), 281–291, 1997, **doi:10.1016/S0169-2070(96)00719-4**. |
-| R26 | doğrula | SHAP (NeurIPS 2017); arXiv:1705.07874 yazarlar ve başlık doğrulandı. Sayfa numarası doğrulanamadı → **sayfa verilmedi**; cilt 30, 2017. |
+| R26 | ✓ (sayfasız) | SHAP (NeurIPS 2017). **Gün 18'de resmî NeurIPS bildiri sayfasından doğrulandı**: Scott M. Lundberg, Su-In Lee; cilt 30, 2017 (arXiv:1705.07874 ile tutarlı). Resmî sayfa sayfa numarası yayımlamıyor → sayfa verilmedi. |
 | R27 | ✓ | *Econometrica* 46(1), 1978, doi:10.2307/1913643. |
 
-## 4. Gün 18'de yapılacaklar
+## 4. Gün 18 sonucu
 
 1. Ders makalesi: künye/PDF yok (kullanıcı doğruladı, bölüm 1); yapılacak bir şey yok.
-2. R15 ve R26 için NeurIPS bildiri sayfa numaralarını resmî bildiri sayfasından (papers.nips.cc) doğrula; doğrulanırsa `refs.bib`'e ekle. Doğrulanamazsa sayfasız kalır.
-3. R13'ün hakemli sürümü yayımlandı mı tekrar kontrol et (§11.5-3).
-4. Sonuç yazımında "bildiğimiz kadarıyla" iddiasını (K3) son kez gözden geçir; literatür taraması güncel mi?
+2. R15 ve R26: NeurIPS bildiri sayfaları resmî kaynaktan kontrol edildi; yazarlar ve cilt doğrulandı, sayfa numarası yayımlanmıyor → sayfasız bırakıldı.
+3. R13: hakemli sürüm yok, ön baskı olarak kalıyor.
+4. K3 iddiası ("bildiğimiz kadarıyla ... bulunamadı") metinde bu ifadeyle duruyor; literatür taraması Ek A'ya dayanır, kapsamlı bir sistematik tarama değildir ve makalede böyle yazılmıştır.
