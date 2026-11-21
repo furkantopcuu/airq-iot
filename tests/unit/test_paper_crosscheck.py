@@ -72,6 +72,12 @@ def test_the_run_counts_are_consistent(n):
     assert n["nBehindTwenty"] <= n["nRunsTwenty"] and n["nBehindFive"] <= n["nRunsFive"]
 
 
+def test_the_paper_may_say_every_horizon_for_the_unseen_station_claim(n):
+    # "the model beats persistence at all stations at every horizon" (RQ1, LOSO): all three counts
+    for h in ("HOne", "HSix", "HTwentyFour"):
+        assert n[f"nLosoBetter{h}"] == n["nLosoStations"]
+
+
 def test_the_scenario_verdicts_add_up(n):
     assert n["nScnConfirmed"] + n["nScnRefuted"] == n["nScnTotal"]
 
