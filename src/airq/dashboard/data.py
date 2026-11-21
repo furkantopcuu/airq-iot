@@ -193,6 +193,37 @@ def _dt(s: str) -> datetime:
     return datetime.fromisoformat(s)
 
 
+def display_offset(sim_now: str | None, now: datetime | None = None) -> timedelta | None:
+    """Shift that makes the newest replayed timestamp read as the current date and time.
+
+    The data is a recorded 2016-2017 Beijing series played back as if live; for display the
+    timeline is moved so that "now" is today. Differences between points stay exactly as recorded.
+    None when the simulated clock is unknown (nothing is shifted)."""
+    if not sim_now:
+        return None
+    try:
+        return (now or datetime.now()).replace(microsecond=0) - _dt(sim_now)
+    except ValueError:
+        return None
+
+
+def shift_iso(ts: str | None, offset: timedelta | None) -> str | None:
+    """An ISO timestamp moved by `offset` (unchanged without an offset or if not a time)."""
+    if not ts or offset is None:
+        return ts
+    try:
+        return (_dt(ts) + offset).isoformat(timespec="seconds")
+    except ValueError:
+        return ts
+
+
+def shift_rows(rows: list[dict], keys: tuple[str, ...], offset: timedelta | None) -> list[dict]:
+    """Copies of `rows` with the timestamp fields `keys` shifted for display."""
+    if offset is None:
+        return rows
+    return [{**r, **{k: shift_iso(r.get(k), offset) for k in keys if k in r}} for r in rows]
+
+
 def station_figure(
     readings: list[dict], forecast: list[dict], warnings: list[dict], title: str = ""
 ) -> go.Figure:

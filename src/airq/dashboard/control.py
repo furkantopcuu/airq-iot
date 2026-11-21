@@ -124,11 +124,13 @@ def format_scorecard(rows: list[dict]) -> pd.DataFrame:
     return df if df.empty else df.sort_values(["Etiket"]).reset_index(drop=True)
 
 
-def format_active(state: dict) -> pd.DataFrame:
+def format_active(state: dict, shift=None) -> pd.DataFrame:
+    """Active interventions; `shift` maps a timestamp to its display form (identity by default)."""
+    shift = shift or (lambda ts: ts)
     rows = [
         {"İstasyon": i["station"], "Mod": i["mode"], "Değişken": ",".join(i["variables"]),
-         "Başlangıç": (i["start_ts"] or "").replace("T", " ")[:16],
-         "Bitiş": (i["end_ts"] or "reset'e kadar").replace("T", " ")[:16],
+         "Başlangıç": (shift(i["start_ts"]) or "").replace("T", " ")[:16],
+         "Bitiş": (shift(i["end_ts"]) or "reset'e kadar").replace("T", " ")[:16],
          "Etiket": i.get("label") or ""}
         for i in state.get("interventions", [])
     ]  # fmt: skip

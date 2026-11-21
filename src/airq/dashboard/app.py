@@ -53,6 +53,34 @@ except ApiError as exc:
     st.sidebar.error(str(exc))
 
 
+show_today = st.sidebar.checkbox(
+    "Tarihleri bugüne göster",
+    value=True,
+    key="show_today",
+    help="Veri, Pekin'den kayıtlı bir 2016-2017 serisidir ve canlıymış gibi oynatılır. Açıkken "
+    "en yeni ölçüm şu anki tarih ve saat olarak gösterilir; ölçümler arasındaki süreler aynen "
+    "kalır. Kapalıyken kaydın özgün tarihleri görünür.",
+)
+if show_today:
+    st.sidebar.caption("Tarihler gösterim için bugüne kaydırıldı; veri 2016-2017 Pekin kaydıdır.")
+
+
+def sim_now() -> str | None:
+    """The newest replayed timestamp (simulated clock; else the newest reading)."""
+    try:
+        now = api.get("/control/active").get("sim_now")
+        if now:
+            return now
+        return max((i.get("last_ts") or "" for i in api.get("/stations")), default="") or None
+    except ApiError:
+        return None
+
+
+def offset():
+    """Display shift of the timeline (None when dates are shown as recorded)."""
+    return dash.display_offset(sim_now()) if show_today else None
+
+
 def warmup_left() -> float | None:
     """Demo only: hours of replay left until the forecaster has its 240 h of history."""
     until = os.environ.get("AIRQ_WARMUP_UNTIL")
@@ -93,6 +121,10 @@ def station_chart(station: str, hours: int) -> None:
     last = readings[-1]["ts"] if readings else None
     if last:
         warns = [w for w in warns if w["made_at_ts"] >= readings[0]["ts"]]
+    shift = offset()
+    readings = dash.shift_rows(readings, ("ts",), shift)
+    forecast = dash.shift_rows(forecast, ("made_at_ts", "target_ts"), shift)
+    warns = dash.shift_rows(warns, ("made_at_ts",), shift)
     st.plotly_chart(
         dash.station_figure(readings, forecast, warns, title=station), use_container_width=True
     )
@@ -277,7 +309,8 @@ def active_and_scorecard() -> None:
         st.progress(scenario["steps_fired"] / max(scenario["steps_total"], 1),
                     text=f"Senaryo: {scenario['name']} ({scenario['steps_fired']}/"
                          f"{scenario['steps_total']} adım)")  # fmt: skip
-    active = ctl.format_active(state)
+    shift = offset()
+    active = ctl.format_active(state, lambda ts: dash.shift_iso(ts, shift))
     st.markdown("**Aktif müdahaleler**")
     if active.empty:
         st.info("Aktif müdahale yok (veri kayıtlı haliyle oynuyor).")
@@ -302,6 +335,10 @@ geçmiş istediği için demo başında "ısınıyor" yazar.
 **⚠ UYARI:** tahmin bir eşiği (75 ya da 150 µg/m³) aşacak görününce üretilir. Kartta yazan sayı
 **son 24 simüle saatteki uyarı kaydı** sayısıdır; bir kayıt = bir ufuk + bir eşik. Tek bir kirlilik
 dalgası bu yüzden birden çok kayıt üretir. Ayrıntılar: Uyarılar sayfası.
+
+**Tarihler:** veri 2016-2017 Pekin kaydıdır ve canlıymış gibi oynatılır. Soldaki "Tarihleri bugüne
+göster" açıkken en yeni ölçüm şu anki tarih ve saat olarak görünür (ölçümler arası süreler aynıdır);
+kapatınca kaydın özgün tarihleri görünür.
 
 **Kontrol paneli:** soldan hazır senaryo çalıştır ya da kendin müdahale gönder; **Hız** bölümünde
 Hızlı (sunum) ve Gerçekçi (yavaş) hız arasında geçiş yapılır. Sonuç grafikte ve **Puan tablosu**nda
@@ -339,7 +376,9 @@ def page_live() -> None:
             help=dash.WARNING_HELP,
         )  # fmt: skip
         last_ts = max((c["last_ts"] or "" for c in cards), default="")
-        st.caption(f"Benzetim saati (son ölçüm): {last_ts.replace('T', ' ')[:16] or '—'}")
+        shown = dash.shift_iso(last_ts, offset()) or ""
+        note = f" (kayıttaki özgün zaman: {last_ts.replace('T', ' ')[:16]})" if show_today else ""
+        st.caption(f"Son ölçüm zamanı: {shown.replace('T', ' ')[:16] or '—'}{note}")
         st.markdown(dash.legend_html(), unsafe_allow_html=True)
         render_cards(cards, columns=4)
         station = st.selectbox("Grafik için istasyon", names, key="live_station") if names else None
@@ -374,7 +413,7 @@ def page_station() -> None:
     def body():
         station_chart(station, hours)
         st.caption(STATION_CHART_HELP)
-        rows = api.get(f"/readings/{station}", hours=12)
+        rows = dash.shift_rows(api.get(f"/readings/{station}", hours=12), ("ts",), offset())
         st.subheader("Son ölçümler")
         st.dataframe(pd.DataFrame(rows).iloc[::-1], use_container_width=True, hide_index=True)
 
@@ -399,6 +438,7 @@ def page_warnings() -> None:
         rows = sorted(dash.warnings_table(warns, readings), key=lambda r: r["Uyarı zamanı"],
                       reverse=True)  # fmt: skip
         known = [r for r in rows if r["Gerçekleşti mi"] != "bilinmiyor"]
+        rows = dash.shift_rows(rows, ("Uyarı zamanı",), offset())
         hit = sum(r["Gerçekleşti mi"] == "evet" for r in known)
         st.markdown(
             f"**{len(rows)} kayıt**, {len({r['İstasyon'] for r in rows})} istasyon"

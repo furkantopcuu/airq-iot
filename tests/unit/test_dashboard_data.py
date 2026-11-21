@@ -199,3 +199,22 @@ def test_status_messages_tell_the_operator_what_is_going_on():
     warm = dash.status_messages([card(True)], {}, 96.0)
     assert levels(warm) == ["info"] and "96" in warm[0][1]
     assert dash.status_messages([], {}, None) == []
+
+
+def test_display_shift_makes_the_newest_point_today_and_keeps_the_spacing():
+    from datetime import datetime
+
+    from airq.dashboard import data as dash
+
+    now = datetime(2026, 11, 21, 21, 5, 30, 123456)
+    off = dash.display_offset("2017-01-03T12:00:00", now)
+    assert dash.shift_iso("2017-01-03T12:00:00", off) == "2026-11-21T21:05:30"  # newest = now
+    assert dash.shift_iso("2017-01-03T09:00:00", off) == "2026-11-21T18:05:30"  # 3 h earlier
+    rows = [{"ts": "2017-01-03T11:00:00", "pm25": 9.0}]
+    assert dash.shift_rows(rows, ("ts",), off)[0] == {"ts": "2026-11-21T20:05:30", "pm25": 9.0}
+    assert rows[0]["ts"] == "2017-01-03T11:00:00"  # the input is not modified
+    # no clock, bad input or no shift requested: dates are left as recorded
+    assert dash.display_offset(None, now) is None and dash.display_offset("junk", now) is None
+    assert dash.shift_iso("2017-01-03T09:00:00", None) == "2017-01-03T09:00:00"
+    assert dash.shift_iso("junk", off) == "junk" and dash.shift_iso(None, off) is None
+    assert dash.shift_rows(rows, ("ts",), None) is rows
