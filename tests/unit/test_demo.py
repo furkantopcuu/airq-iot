@@ -117,3 +117,35 @@ def test_the_release_recording_is_used_when_there_is_no_live_demo_run(tmp_path, 
     assert demo.pick_recorded_db(None, cfg).name == "demo_recorded.db"
     (tmp_path / "data" / "demo.db").write_bytes(b"x")
     assert demo.pick_recorded_db(None, cfg).name == "demo.db"  # a fresh live run still wins
+
+
+def test_missing_inputs_name_the_command_that_provides_them(tmp_path, monkeypatch):
+    monkeypatch.setenv("AIRQ_HOME", str(tmp_path))
+    cfg = load_config()
+    missing = demo.missing_inputs(cfg, models=True)
+    assert len(missing) == 2
+    assert "download_data" in missing[0] and "fetch_release --only models" in missing[1]
+    assert len(demo.missing_inputs(cfg, models=False)) == 1  # the smoke test needs no models
+    raw = tmp_path / "data" / "raw" / "beijing"
+    raw.mkdir(parents=True)
+    (raw / "PRSA_Data_Aotizhongxin_x.csv").write_text("x")
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "manifest.json").write_text("{}")
+    assert demo.missing_inputs(cfg, models=True) == []
+
+
+def test_the_live_demo_and_the_smoke_test_stop_early_with_a_clear_message(tmp_path, monkeypatch):
+    monkeypatch.setenv("AIRQ_HOME", str(tmp_path))
+    cfg = load_config()
+    with pytest.raises(RuntimeError, match="download_data"):
+        demo.smoke(
+            cfg
+        )  # before: the fleet died silently and the test reported "stations never appeared"
+
+    class Args:
+        offline = False
+        no_predictor = False
+
+    with pytest.raises(SystemExit) as exc:
+        demo.run_demo(cfg, Args())
+    assert "fetch_release --only demo" in str(exc.value)  # and it points at the offline alternative

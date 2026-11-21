@@ -166,9 +166,40 @@ def ensure_broker(host: str, port: int, stack_cleanup: list) -> str:
     return f"{host}:{port}"
 
 
+def missing_inputs(cfg: dict, models: bool) -> list[str]:
+    """What the live stack needs that is not there yet, each with the command that provides it.
+
+    The fleet and the predictor fail inside their own process when data or models are missing, so
+    the caller only sees "stations never appeared": check first and say what to run."""
+    paths = resolve_paths(cfg["paths"])
+    out = []
+    if not sorted((paths["raw"] / "beijing").rglob("PRSA_Data_*.csv")):
+        out.append(
+            "ham veri yok: `python -m scripts.download_data` (ya da `python -m scripts.run_all`)"
+        )
+    if models and not (paths["models"] / "manifest.json").exists():
+        out.append(
+            "eğitilmiş model yok: `python -m scripts.fetch_release --only models` "
+            "(ya da `python -m scripts.run_all`)"
+        )
+    return out
+
+
+def explain_missing(items: list[str]) -> str:
+    return (
+        "Canlı demo için eksik: " + "; ".join(items) + ". Veri ve model olmadan kayıtlı bir koşuyu "
+        "açmak için: `python -m scripts.fetch_release --only demo`, ardından "
+        "`python -m scripts.demo --offline`."
+    )
+
+
 def run_demo(cfg: dict, args) -> int:
     d, iot = cfg["demo"], cfg["iot"]["broker"]
     paths = resolve_paths(cfg["paths"])
+    if not args.offline:
+        missing = missing_inputs(cfg, models=not args.no_predictor)
+        if missing:
+            raise SystemExit(explain_missing(missing))
     api_port, dash_port = args.api_port or d["api_port"], args.dashboard_port or d["dashboard_port"]
     logs = paths["db"].parent / "demo_logs"
     extra: list = []
@@ -272,6 +303,9 @@ def switch_to_demo_speed(cfg: dict, db_path: Path, broker: str, stack: Stack) ->
 
 def smoke(cfg: dict, hours: int = 10, speedup: float = 3600.0) -> dict:
     """Real processes, private broker, a command through the HTTP API: does everything connect?"""
+    missing = missing_inputs(cfg, models=False)  # the smoke test starts no predictor
+    if missing:
+        raise RuntimeError(explain_missing(missing))
     paths = resolve_paths(cfg["paths"])
     work = paths["reports"] / "scenarios" / "work" / "smoke"
     work.mkdir(parents=True, exist_ok=True)

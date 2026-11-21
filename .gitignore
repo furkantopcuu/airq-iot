@@ -44,3 +44,14 @@ reports/scenarios/work/
 id_rsa*
 credentials*
 secrets.*
+
+# LaTeX build artefacts (paper/main.pdf itself is kept)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/*.toc
