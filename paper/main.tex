@@ -7,7 +7,9 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[turkish]{babel}
+% Turkish babel makes '=' (and ':' '!') active characters, which breaks key=value options
+% such as \includegraphics[width=...]: switch the shorthands off.
+\usepackage[shorthands=off,turkish]{babel}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs,array}
 \usepackage{graphicx}
@@ -29,6 +31,7 @@
   \renewenvironment{table}[1][]{\begin{table*}[##1]}{\end{table*}}%
   \input{tables/#1}%
   \endgroup}
+\newcommand{\widetablesmall}[1]{\begingroup\let\footnotesize\scriptsize\widetable{#1}\endgroup}
 \newcommand{\ugm}{\textmu g/m$^3$}
 \newcommand{\pmtwo}{PM$_{2.5}$}
 
@@ -96,6 +99,7 @@ Tablo~\ref{tab:related} ilgili çalışmaları karşılaştırır. Bildiğimiz k
 \caption{İlgili çalışmaların karşılaştırması (çalışmaların bildirdiği özelliklere göre; "---": ilgili değil veya belirtilmemiş).}
 \label{tab:related}
 \centering\footnotesize
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lllllll}
 \toprule
 Çalışma & Mimari / protokol & Veri & Yöntem & Görev & Bölme & Ağ / veri kalitesi $\rightarrow$ tahmin \\
@@ -110,7 +114,7 @@ Tablo~\ref{tab:related} ilgili çalışmaları karşılaştırır. Bildiğimiz k
 \cite{R17} & --- & Pekin (günlük) & ARIMA/Prophet/LSTM & Günlük & Kronolojik, sızıntılı ölçekleme & Yok \\
 \textbf{Bu çalışma} & Sanal cihaz, MQTT QoS\,1/LWT, kenar, FastAPI & Pekin & LGBM, $k\in\{0,\nKThree{},\nKEleven{}\}$, erken uyarı & 1/6/24 sa + uyarı & Kronolojik + LOSO & \textbf{Var (RQ3)} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table*}
 
 % ------------------------------------------------------------------------------------------------
@@ -132,6 +136,7 @@ Sistem (Şekil~\ref{fig:arch}) şu bileşenlerden oluşur ve her biri ayrı bir 
 \caption{MQTT konuları, QoS ve retain bayrağı (\texttt{src/airq/iot/topics.py}).}
 \label{tab:topics}
 \centering\footnotesize
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{llcc}
 \toprule
 Konu & Yayıncı $\rightarrow$ abone & QoS & Retain \\
@@ -144,7 +149,7 @@ Konu & Yayıncı $\rightarrow$ abone & QoS & Retain \\
 \texttt{airq/cmd/\ldots} & API $\rightarrow$ cihaz, ağ, kenar & 1 & hayır \\
 \texttt{airq/cmd/ack/\ldots} & uygulayan $\rightarrow$ denetleyici & 1 & hayır \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \textbf{Kenar katmanı.} Kenar geçidi her mesajı doğrular ve \pmtwo{} değerini beş kuralla işaretler: eksik, aralık dışı, ani sıçrama, takılı kalma ve \pmtwo{}$\le$PM$_{10}$ tutarlılığı; ayrıca mesaj düzeyinde \texttt{seq} boşluğu ve tekrar. Kenar filtresi \emph{açıkken} güvenilmez değer \texttt{null} ile değiştirilir. \emph{Neden:} bozuk bir değer tahmini bozar; kontrolü kaynağa yakın yapmak veriyi temizler ve hatalı cihazı erkenden görünür kılar \cite{R5,R21,R22}. Gerçek veride \pmtwo{}$>$PM$_{10}$ satırları \%\nPmInconsistentPct{} olduğundan katı kural çok yanlış alarm verirdi; tolerans eğitim verisinin uç değerlerinden seçilmiştir. Kural parametreleri yalnızca eğitim verisinden öğrenilir. Aynı kural tanımı hem çevrimdışı deneylerde (vektörel) hem canlı geçitte (artımlı) kullanılır; eşitlik bir testle denetlenir.
@@ -230,7 +235,7 @@ Tablo~\ref{tab:rq3a} ve Şekil~\ref{fig:rq3a}, \nReps{} tekrarlı tam ızgarayı
 
 \textbf{Ölçümün bulduğu kusur ve düzeltmesi.} Aynı bekleme, kalıcı olarak çevrimdışı bir cihazın \emph{her saat} \nWaitMs{}~ms boşa beklemeye yol açması anlamına geliyordu: \nSpeedFast{}$\times$ hızda tam ağda medyan uyarı gecikmesi \nOffLatFullBefore{}~s iken bir çevrimdışı cihazla \nOffLatOneBefore{}~s oldu. Tahmin servisi artık, retained durumu \texttt{offline} olan istasyonu kısa bir ek süreden sonra beklemez (durum mesajı, kenardan geçen son ölçümlerin önüne geçebildiğinden ek süre gereklidir). Son kodla yeniden ölçümde bir çevrimdışı cihazla gecikme \nOffLatOneAfter{}~s (tam ağda \nOffLatFullAfter{}~s), üç ve altı cihazla \nOffLatThreeAfter{} ve \nOffLatSixAfter{}~s'tir; hiçbir koşu geride kalmadı, tahmin kalitesi değişmedi. Düzeltme \emph{mesaj kaybında} yardımcı olmaz: kaybolan mesaj hiçbir şey duyurmaz, bu yüzden o bekleme sürer.
 
-\widetable{rq3a}
+\widetablesmall{rq3a}
 
 \begin{figure}[t]
 \centering
@@ -303,7 +308,7 @@ Gerçek bir kentsel ağın kayıtlı verisiyle MQTT, kenar doğrulaması, SQLite
 
 Gelecek çalışma: gerçek düşük maliyetli sensörlerle (örneğin PMS5003 ve ESP32) saha testi ve kalibrasyon \cite{R20,R1}; TLS ve erişim denetimi; grafik sinir ağları \cite{R12}; kenarda tahmin \cite{R6}; aşırı olaylar için asimetrik amaç fonksiyonları; ayrı bir anomali tespiti modülü.
 
-\textbf{Erişilebilirlik.} Kod, sonuç tabloları ve sürüm notları \url{https://github.com/furkantopcuu/airq-iot} adresindedir; \texttt{python -m scripts.run_all} ham veriden tüm sonuçları yeniden üretir; paketlenmiş eğitimli modeller ve kayıtlı bir demo koşusu depo sürümünde sağlama toplamlarıyla yayımlanmıştır.
+\textbf{Erişilebilirlik.} Kod, sonuç tabloları ve sürüm notları \url{https://github.com/furkantopcuu/airq-iot} adresindedir; \texttt{python -m scripts.run\_all} ham veriden tüm sonuçları yeniden üretir; paketlenmiş eğitimli modeller ve kayıtlı bir demo koşusu depo sürümünde sağlama toplamlarıyla yayımlanmıştır.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

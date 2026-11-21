@@ -5,7 +5,7 @@ TALIMAT §11.5 gereği: ders makalesi, kaynakça doğrulaması ve Ek A'ya göre 
 ## 1. Ders makalesi
 
 - **Kullanıcıdan alınan bilgi:** Hoca örnek olarak *"Air-quality sensor networks + ML"* konulu bir makale gösterdi; dersin adı *Nesnelerin İnterneti*.
-- **Künye / PDF:** henüz verilmedi. İçeriğini tahmin edip yazmıyoruz (uydurma künye kabul edilemez). **Gün 18'de kullanıcıdan adı veya PDF'i istenecek**; gelince bu dosyaya künye, yöntem özeti ve bizim çalışmamızdan farkı yazılır.
+- **Künye / PDF: yok.** Kullanıcı (2026-11-21) doğruladı: hoca makalenin yalnızca adını verdi, künye ya da PDF vermedi ve elde yok. Bu yüzden makalenin içeriğini tahmin edip yazmıyoruz (uydurma künye kabul edilemez) ve karşılaştırma tablosuna eklemiyoruz. Hoca ileride künye veya PDF verirse bu dosyaya künye, yöntem özeti ve bizim çalışmamızdan farkı eklenir.
 - **Merkezî atıf:** Bu konuyu kapsayan iki derleme Ek A'da var ve makalede merkezî atıf olarak kullanıldı: **[R1]** Concas vd. (düşük maliyetli açık hava sensörleri ve kalibrasyon derlemesi) ve **[R2]** Garcia vd. (IoT tabanlı hava kalitesi izleme ve yapay zekâ derlemesi). Ders makalesi bunlardan biriyse künyesi aynen kalır; değilse ayrıca eklenir.
 
 ## 2. Kaynakça doğrulama yöntemi
@@ -51,7 +51,7 @@ Notlar:
 
 ## 4. Gün 18'de yapılacaklar
 
-1. Ders makalesinin adını/PDF'ini kullanıcıdan al (bölüm 1).
+1. Ders makalesi: künye/PDF yok (kullanıcı doğruladı, bölüm 1); yapılacak bir şey yok.
 2. R15 ve R26 için NeurIPS bildiri sayfa numaralarını resmî bildiri sayfasından (papers.nips.cc) doğrula; doğrulanırsa `refs.bib`'e ekle. Doğrulanamazsa sayfasız kalır.
 3. R13'ün hakemli sürümü yayımlandı mı tekrar kontrol et (§11.5-3).
 4. Sonuç yazımında "bildiğimiz kadarıyla" iddiasını (K3) son kez gözden geçir; literatür taraması güncel mi?

@@ -42,7 +42,7 @@ def labels() -> set[str]:
         )
     )
     main_body = strip_comments((PAPER / "main.tex").read_text(encoding="utf-8"))
-    for name in re.findall(r"\\widetable\{([^}#]+)\}", main_body):
+    for name in re.findall(r"\\widetable\w*\{([^}#]+)\}", main_body):
         f = PAPER / "tables" / f"{name}.tex"
         if f.exists():  # only the tables that main.tex really includes
             found |= set(re.findall(r"\\label\{([^}]+)\}", f.read_text(encoding="utf-8")))
@@ -116,6 +116,15 @@ def main() -> int:
     for f in re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", body):
         if not (PAPER / f).exists():
             errors.append(f"figure not found: {f}")
+
+    text_only = re.sub(r"\$[^$]*\$", " ", body)  # outside math mode an underscore must be escaped
+    text_only = re.sub(
+        r"\\(?:url|input|ref|label|cite|widetable\w*|includegraphics|bibliography\w*)(?:\[[^\]]*\])?\{[^}]*\}",
+        " ",
+        text_only,
+    )
+    for m in re.finditer(r"(?<!\\)_", text_only):
+        errors.append(f"unescaped underscore outside math mode near: ...{text_only[max(0, m.start() - 25):m.start() + 15]!r}...")  # fmt: skip
 
     if body.count("{") != body.count("}"):
         errors.append(

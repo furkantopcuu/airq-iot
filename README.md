@@ -242,6 +242,7 @@ The paper (IEEEtran, Turkish text with an English abstract) is in `paper/`: `mai
 (`python -m scripts.make_paper_numbers`; [paper/NUMBERS.md](paper/NUMBERS.md) lists the file, row selector
 and column of each one). `python -m scripts.check_paper` checks the source without a LaTeX installation.
 The bibliography was checked against Crossref, DataCite and arXiv ([docs/makale_kaynak.md](docs/makale_kaynak.md)).
+`paper/main.pdf` is the compiled draft (Overleaf; currently 10 pages, to be trimmed to the 6-8 page target).
 
 ## Tests
 
