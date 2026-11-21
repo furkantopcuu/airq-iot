@@ -63,7 +63,7 @@ jobs:
           sleep 3
           pytest -m broker -rf --tb=short --junitxml=broker-junit.xml
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: broker-junit
           path: broker-junit.xml
