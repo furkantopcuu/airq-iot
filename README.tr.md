@@ -10,6 +10,10 @@ sensör değerini değiştirmeyi, sensör arızası enjekte etmeyi, ağı bozmay
 açıp kapatmayı sağlar; puan tablosu tahminlerin ve uyarıların buna tepkisini ölçer.
 English: [README.md](README.md).
 
+Daha fazlası: [ARCHITECTURE.md](ARCHITECTURE.md) (parçalar nasıl birleşiyor, İngilizce),
+[FINDINGS.md](FINDINGS.md) (deneylerin bulguları, işe yaramayanlar dahil, İngilizce),
+[SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md).
+
 ![Mimari](reports/figures/architecture.png)
 
 ## Neler var
@@ -29,6 +33,11 @@ English: [README.md](README.md).
 epizodu, yerel kirlilik rampası ve sensör sıçraması arızaları, edge filtresi kapalı ve açık). Veri ya da
 model olmadan kendiniz oynatabilirsiniz: `python -m scripts.fetch_release --only demo`, ardından
 `python -m scripts.demo --offline`.
+
+Aynı kayıt üzerinde panonun kısa bir turu (canlı sayfa ve puan tablosu, q10-q90 bandıyla istasyon
+detayı, uyarılar):
+
+![Pano turu](docs/assets/demo_dashboard.gif)
 
 ![Kontrol paneli ve ağ kartları](docs/assets/dashboard_control.jpg)
 
@@ -147,6 +156,14 @@ dosyasında, her teknoloji seçiminin gerekçesi [docs/NEDEN.md](docs/NEDEN.md) 
 Canlı sistem ölçümü (RQ3a: kayıp, gecikme, çevrimdışı cihaz, CPU ve bellek)
 `reports/tables/rq3a_bench.csv` ve `reports/figures/rq3a_system.png` dosyalarındadır.
 
+## Hızlı başlangıç (Linux, macOS, WSL, Git Bash)
+
+```bash
+bash scripts/quickstart.sh          # kurulum, kayıtlı koşuyu indirme, panoyu açma (veri ya da model gerekmez)
+bash scripts/quickstart.sh test     # kurulum ve hızlı testler
+bash scripts/quickstart.sh --help   # tüm kipler; --dry-run komutları çalıştırmadan gösterir
+```
+
 ## Hızlı başlangıç (Windows PowerShell)
 
 ```powershell
@@ -223,9 +240,10 @@ pytest -m "not broker and not slow"      # hızlı: birim testleri
 pytest                                   # her şey, gerçek broker ile (Mosquitto ve amqtt)
 ```
 
-CI birim testlerini Windows'ta (zorunlu) ve Ubuntu'da, notebook'ları fixture kipinde çalıştırır.
-Ubuntu'daki broker entegrasyon işi şu an başarısız ve zorunlu değil (`docs/KARARLAR.md`'de açık
-madde); tam test takımı yalnızca Windows'ta doğrulanmıştır.
+CI birim testlerini Windows'ta (zorunlu) ve Ubuntu'da (Python 3.11 ve 3.12), notebook'ları fixture
+kipinde, broker entegrasyon testlerini Ubuntu'da, pre-commit, mypy ve bağımlılık denetimini çalıştırır;
+son koşu hepsinde geçiyor. `main`'e birleştirmek için Windows testleri ve kalite işi yeşil bir pull
+request gerekir. `slow` işaretli testler yalnızca yerelde çalışır.
 
 ## Sınırlamalar
 
@@ -250,7 +268,8 @@ madde); tam test takımı yalnızca Windows'ta doğrulanmıştır.
 `src/airq/` kütüphane - `scripts/` komut satırı girişleri - `configs/` YAML yapılandırma ve
 senaryolar - `notebooks/` ince notebook'lar (`scripts/build_notebooks.py` üretir) -
 `reports/` sonuç tabloları, metrikler, şekiller, senaryo koşuları - `paper/tables/` üretilmiş LaTeX /
-Markdown tablolar - `docs/` karar günlüğü ve bileşen gerekçeleri - `tests/`.
+Markdown tablolar - `docs/` karar günlüğü ve bileşen gerekçeleri - `tests/`. Parçaların birleşimi:
+[ARCHITECTURE.md](ARCHITECTURE.md); deney bulguları: [FINDINGS.md](FINDINGS.md).
 
 ## Lisans
 
