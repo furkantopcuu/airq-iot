@@ -135,10 +135,15 @@ def control_panel(names: list[str]) -> None:
             send("/control/fleet", {"action": "pause"})
         if c2.button("Devam", key="ctl_resume"):
             send("/control/fleet", {"action": "resume"})
-        speed = st.number_input("Hız (×; 3600 = 1 sn = 1 saat)", min_value=1.0, value=3600.0,
+        s1, s2 = st.columns(2)
+        if s1.button("Hızlı (3600×)", key="ctl_speed_fast", help="1 sn = 1 simüle saat"):
+            send("/control/fleet", ctl.speed_payload(ctl.SPEED_FAST))
+        if s2.button("Gerçekçi (60×)", key="ctl_speed_real", help="1 dk = 1 simüle saat"):
+            send("/control/fleet", ctl.speed_payload(ctl.SPEED_REALISTIC))
+        speed = st.number_input("Özel hız (×; 3600 = 1 sn = 1 saat)", min_value=1.0, value=3600.0,
                                 key="ctl_speed")  # fmt: skip
         if st.button("Hızı uygula", key="ctl_speedup"):
-            send("/control/fleet", {"action": "speedup", "value": speed})
+            send("/control/fleet", ctl.speed_payload(speed))
     with st.expander("Ağ"):
         net_target = st.selectbox("Hedef", [ctl.ALL, *names], key="ctl_net_target")
         loss = st.slider("Mesaj kaybı", 0.0, 0.5, 0.0, 0.05, key="ctl_loss")

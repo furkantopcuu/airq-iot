@@ -13,6 +13,7 @@ negative results, is logged in [docs/KARARLAR.md](docs/KARARLAR.md) (Turkish).
 - `slides/airq_iot_sunum.pptx` (23 slides with speaker notes, built by `scripts/make_pptx.py` from the paper's numbers) and `slides/hazirlik.md`, a study guide for the talk.
 - `reports/tables/rq1_tuning_convergence.csv`: evidence for the 20-trial Optuna budget.
 - `scripts.demo --realistic` (60x, one reading per station per minute) and `--speedup N`: a slow, realistic pace next to the fast default.
+- `demo.ps1`: one PowerShell command starts the demo with the project's virtual environment; the dashboard's Filo panel has "Hızlı (3600×)" and "Gerçekçi (60×)" buttons.
 
 ### Fixed
 - `demo` and `demo --smoke` now say which input (raw data, trained models) is missing and which command provides it, instead of failing with "stations never appeared".

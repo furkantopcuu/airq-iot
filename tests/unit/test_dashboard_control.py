@@ -78,3 +78,17 @@ def test_status_line_and_active_table():
         and table.iloc[0]["Başlangıç"] == "2016-06-11 00:00"
     )
     assert ctl.format_active({}).empty
+
+
+def test_speed_presets_and_payload():
+    from airq.dashboard import control as ctl
+
+    assert ctl.SPEED_REALISTIC < ctl.SPEED_FAST
+    assert ctl.speed_payload(ctl.SPEED_REALISTIC) == {"action": "speedup", "value": 60.0}
+    assert ctl.speed_payload(3600)["value"] == 3600.0
+    for bad in (0, -1):  # 0 would mean "as fast as possible" in the fleet
+        try:
+            ctl.speed_payload(bad)
+        except ValueError:
+            continue
+        raise AssertionError(bad)

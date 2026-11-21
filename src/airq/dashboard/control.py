@@ -19,6 +19,8 @@ MODE_LABELS = {
 PERTURB_LABELS = {"spike": "Ani sıçrama (spike)", "stuck": "Takılı kalma (stuck)",
                   "dropout": "Kesinti (dropout)"}  # fmt: skip
 ALL = "all"
+# replay pace presets (x real time): fast = one simulated hour per second, realistic = per minute
+SPEED_FAST, SPEED_REALISTIC = 3600.0, 60.0
 
 
 def device_payload(
@@ -58,6 +60,13 @@ def device_payload(
         "allow_invalid": allow_invalid, "label": (label or "").strip() or None,
     }  # fmt: skip
     return body
+
+
+def speed_payload(value: float) -> dict:
+    """Body of the fleet speed command (the fleet clamps nothing: 0 would mean unthrottled)."""
+    if value <= 0:
+        raise ValueError("speed must be positive")
+    return {"action": "speedup", "value": float(value)}
 
 
 def network_payload(
