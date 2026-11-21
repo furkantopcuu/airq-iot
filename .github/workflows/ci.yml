@@ -8,7 +8,7 @@ jobs:
     continue-on-error: ${{ matrix.os == 'ubuntu-latest' }}   # Ubuntu is informational, Windows is required
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: {python-version: "${{ matrix.python }}", cache: pip}
       - run: pip install -r requirements.txt
       - run: pip install -e .
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: {python-version: "3.12"}
       - run: pip install -r requirements.txt
       - run: pip install -e . mypy bandit
@@ -31,7 +31,7 @@ jobs:
     continue-on-error: true               # informational: advisories do not block a merge
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: {python-version: "3.12"}
       - run: pip install pip-audit
       - run: pip-audit -r requirements.txt
@@ -40,7 +40,7 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: {python-version: "3.12"}
       - if: ${{ hashFiles('notebooks/*.ipynb') != '' }}
         run: pip install -e ".[ml,dev]"
@@ -51,7 +51,7 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: {python-version: "3.11"}
       - if: ${{ hashFiles('src/airq/iot/broker.py') != '' }}
         run: pip install -r requirements.txt
