@@ -282,7 +282,7 @@ senaryolar - `notebooks/` ince notebook'lar (`scripts/build_notebooks.py` üreti
 `reports/` sonuç tabloları, metrikler, şekiller, senaryo koşuları - `paper/tables/` üretilmiş LaTeX /
 Markdown tablolar - `docs/` karar günlüğü ve bileşen gerekçeleri - `tests/`. Parçaların birleşimi:
 [ARCHITECTURE.md](ARCHITECTURE.md); deney bulguları: [FINDINGS.md](FINDINGS.md).
-`slides/` sunum malzemesini içerir: her teknik slayta bir "neden?" kutusu koyan slayt iskeleti, konuşmacı notları ve olası jüri soruları ile kısa cevaplar. `slides/src/`'den üretilir (`python -m scripts.make_slides`); slayttaki her sayı makaledeki sayıdır.
+`slides/` sunum malzemesini içerir: her teknik slayta bir "neden?" kutusu koyan slayt iskeleti, konuşmacı notları ve olası jüri soruları ile kısa cevaplar. `slides/src/`'den üretilir (`python -m scripts.make_slides`); slayttaki her sayı makaledeki sayıdır. `slides/airq_iot_sunum.pptx` bitmiş sunumdur (konuşmacı notlarıyla 23 slayt; `python -m scripts.make_pptx`), aynı sayılarla üretilir; `slides/hazirlik.md` sunum için çalışma rehberidir.
 
 ## Lisans
 

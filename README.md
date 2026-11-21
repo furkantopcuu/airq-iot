@@ -284,7 +284,7 @@ quality job green. Tests marked `slow` run locally only.
 tables, metrics, figures, scenario runs - `paper/tables/` generated LaTeX / Markdown tables -
 `docs/` decision log and per-component rationale - `tests/`. How the parts fit together:
 [ARCHITECTURE.md](ARCHITECTURE.md); what the experiments found: [FINDINGS.md](FINDINGS.md).
-`slides/` holds the presentation material (Turkish): the slide outline with a why-box per technical slide, speaker notes and likely jury questions with short answers. They are generated from `slides/src/` (`python -m scripts.make_slides`), so every number on a slide is the number in the paper.
+`slides/` holds the presentation material (Turkish): the slide outline with a why-box per technical slide, speaker notes and likely jury questions with short answers. They are generated from `slides/src/` (`python -m scripts.make_slides`), so every number on a slide is the number in the paper. `slides/airq_iot_sunum.pptx` is the finished deck (23 slides with speaker notes; `python -m scripts.make_pptx`), built from the same numbers; `slides/hazirlik.md` is a study guide for the talk.
 
 ## License
 

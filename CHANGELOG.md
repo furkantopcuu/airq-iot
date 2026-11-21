@@ -10,6 +10,7 @@ negative results, is logged in [docs/KARARLAR.md](docs/KARARLAR.md) (Turkish).
 - **Paper** (`paper/`): IEEEtran draft, Turkish text with an English abstract, 8 pages, compiled on Overleaf. Every number in the text is a macro generated from `reports/` (`paper/NUMBERS.md` maps each to its source), checked by `scripts/check_paper.py` and by tests that re-derive the numbers independently.
 - `ARCHITECTURE.md`, `FINDINGS.md`, `scripts/quickstart.sh` (Linux, macOS, WSL, Git Bash).
 - **Presentation material** (`slides/`): outline, speaker notes, likely jury questions (generated from `slides/src/` with the paper's numbers), dashboard screenshots and a silent backup video.
+- `slides/airq_iot_sunum.pptx` (23 slides with speaker notes, built by `scripts/make_pptx.py` from the paper's numbers) and `slides/hazirlik.md`, a study guide for the talk.
 - `reports/tables/rq1_tuning_convergence.csv`: evidence for the 20-trial Optuna budget.
 
 ### Fixed
