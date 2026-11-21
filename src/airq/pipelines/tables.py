@@ -381,8 +381,10 @@ TABLES = [
     TableSpec(
         "rq3a",
         "rq3a_bench",
-        "RQ3a: ağ bozulması altında sistem ölçümleri (kısaltılmış plan).",
-        "RQ3a: live-system measurements under network impairment (reduced plan).",
+        "RQ3a: ağ bozulması ve çevrimdışı cihaz altında sistem ölçümleri (spesifikasyondaki tam "
+        "grid, 3 tekrar; Behind = tahmin servisinin geride kaldığı koşu sayısı).",
+        "RQ3a: live-system measurements under network impairment and offline devices (the full "
+        "specified grid, 3 repetitions; Behind = runs in which the predictor fell behind).",
         t_rq3a,
     ),
     TableSpec(

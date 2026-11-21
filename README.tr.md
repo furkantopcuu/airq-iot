@@ -233,6 +233,15 @@ Aynı hatların ince sarmalayıcıları (`notebooks/`, `scripts/build_notebooks.
 | `04_robustness_rq3b` | RQ3b: hatalı girdi, edge filtresi açık / kapalı |
 | `06_figures_tables` | tüm makale şekilleri ve tabloları |
 
+## Makale
+
+Makale (IEEEtran, Türkçe metin ve İngilizce özet) `paper/` altındadır: `main.tex`, `refs.bib`, `numbers.tex`,
+`tables/` ve `figures/`. Klasörü Overleaf'e yükleyip `main.tex`'i derleyin (IEEEtran Overleaf'te hazırdır).
+Metindeki her sayı `reports/`'tan üretilen bir makrodur (`python -m scripts.make_paper_numbers`;
+[paper/NUMBERS.md](paper/NUMBERS.md) her makronun dosyasını, satır seçicisini ve sütununu verir).
+`python -m scripts.check_paper` LaTeX kurulu olmadan kaynağı denetler. Kaynakça Crossref, DataCite ve
+arXiv ile doğrulandı ([docs/makale_kaynak.md](docs/makale_kaynak.md)).
+
 ## Testler
 
 ```powershell

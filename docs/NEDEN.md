@@ -248,3 +248,18 @@ Her giriş bileşen yazılırken eklenir (TALIMAT §0.10). Format:
 - Alternatifler ve neden seçilmedi: Gauss varsayımlı aralık (PM2.5 dağılımı çarpık, haze'de kalın kuyruk), bootstrap toplulukları (çok daha pahalı), ayrı bir derin model (ek bağımlılık, LightGBM zaten aynı özellikleri kullanıyor).
 - Projede nerede: `src/airq/models/quantile.py`, `src/airq/pipelines/rq4.py`
 - Sunumda tek cümle: Tahminin yanına güven aralığı koyduk; aralık orta kirlilikte güvenilir ama aşırı tepelerde yetersiz, üst sınırla uyarı daha fazla olayı yakalıyor ama daha çok yanlış alarm veriyor.
+
+### Makale sayılarını koddan üretmek (`make_paper_numbers`, `check_paper`)
+- Ne: Makale metnindeki her sonuç sayısı bir LaTeX makrosudur (`
+RmseMtwobHOne`); makrolar `paper/numbers.tex` dosyasına `reports/tables/*.csv` hücrelerinden üretilir ve `paper/NUMBERS.md` her makroyu dosya, satır seçici ve sütunla eşler. `check_paper` LaTeX kurulu olmadan tanımsız makro, eksik kaynak, kırık `ef` ve özet uzunluğunu denetler.
+- Neden: Elle yazılan her sayı bir yanlış yazım ve sonuçla makale arasında kopma riskidir (TALIMAT §11.4). Sonuç yeniden üretilirse makale sayıları da değişir; bir test, `numbers.tex`'in `reports/` ile eşit olduğunu denetler. Yazım sırasında bu yolla, taslağın bir iddiasını (kenar filtresinin "geri kazanım" yüzdesi) tablodaki 1 ondalıklı değerle uyuşmayacak biçimde yuvarlamam yakalandı.
+- Alternatifler ve neden seçilmedi: Sayıları elle yazıp sonra kontrol etmek (kontrol unutulur), tabloların yanında metni de üretmek (metin yazımı için fazla katı).
+- Projede nerede: `scripts/make_paper_numbers.py`, `scripts/check_paper.py`, `paper/numbers.tex`, `paper/NUMBERS.md`, `tests/unit/test_paper.py`
+- Sunumda tek cümle: Makaledeki her sayı bir sonuç dosyasındaki bir hücreye bağlı; sonuç değişirse makale sayısı da değişiyor ve bir test bunu denetliyor.
+
+### Kaynakça doğrulaması (Crossref, DataCite, arXiv)
+- Ne: `paper/refs.bib` Ek A'dan üretildi; her DOI'li kaydın künyesi yayıncı kayıt sisteminden (Crossref) alınıp Ek A ile karşılaştırıldı, veri seti DataCite'tan, arXiv kayıtları arXiv'den doğrulandı. Kayıt kayıt sonuç `docs/makale_kaynak.md`'dedir.
+- Neden: Uydurma ya da hatalı künye kabul edilemez (TALIMAT §11.5). Doğrulama gerçek bir hatayı yakaladı: R18'in yazar adları Ek A'da yanlıştı. Doğrulanamayan alan (LightGBM ve SHAP bildirilerinin sayfa numarası) tahmin edilmedi, atlandı.
+- Alternatifler ve neden seçilmedi: Künyeleri hafızadan yazmak (hata ve uydurma riski), yalnızca Ek A'ya güvenmek (R18 hatası kalırdı).
+- Projede nerede: `paper/refs.bib`, `docs/makale_kaynak.md`
+- Sunumda tek cümle: Her kaynağın künyesini yayıncının kayıt sisteminden doğruladık; Ek A'daki bir yazar adı hatası böyle düzeldi.

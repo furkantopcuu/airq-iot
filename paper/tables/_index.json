@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-20T22:52:20",
+  "generated_at": "2026-11-21T12:18:14",
   "tables": {
     "dataset": {
       "source": [
@@ -151,7 +151,7 @@
       "source": [
         "reports/tables/rq3a_bench.csv"
       ],
-      "caption_en": "RQ3a: live-system measurements under network impairment (reduced plan).",
+      "caption_en": "RQ3a: live-system measurements under network impairment and offline devices (the full specified grid, 3 repetitions; Behind = runs in which the predictor fell behind).",
       "rows": 19,
       "columns": [
         "Speed (×)",
