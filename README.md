@@ -208,6 +208,8 @@ plays one simulated hour per second inside a real haze episode and opens the das
 `python -m scripts.demo --offline` opens the dashboard on it without a broker (controls are
 disabled). `python -m scripts.demo --smoke` is a 10-second end-to-end self test.
 
+Pace: the default replays one simulated hour per second (3600x, values change fast). `python -m scripts.demo --realistic` slows it to one new reading per station per minute (60x), `--speedup N` sets any speed, and the dashboard's Fleet > Speed changes it live.
+
 Backups if the live demo fails: `python -m scripts.demo --offline`, the tour above (`docs/assets/demo_dashboard.gif`), six screenshots of the dashboard (`slides/demo_screens/`) and a 24-second silent video (`slides/demo_backup.mp4`, rebuilt by `python -m scripts.make_demo_video`).
 
 ## Reproduce the results

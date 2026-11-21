@@ -12,6 +12,7 @@ negative results, is logged in [docs/KARARLAR.md](docs/KARARLAR.md) (Turkish).
 - **Presentation material** (`slides/`): outline, speaker notes, likely jury questions (generated from `slides/src/` with the paper's numbers), dashboard screenshots and a silent backup video.
 - `slides/airq_iot_sunum.pptx` (23 slides with speaker notes, built by `scripts/make_pptx.py` from the paper's numbers) and `slides/hazirlik.md`, a study guide for the talk.
 - `reports/tables/rq1_tuning_convergence.csv`: evidence for the 20-trial Optuna budget.
+- `scripts.demo --realistic` (60x, one reading per station per minute) and `--speedup N`: a slow, realistic pace next to the fast default.
 
 ### Fixed
 - `demo` and `demo --smoke` now say which input (raw data, trained models) is missing and which command provides it, instead of failing with "stations never appeared".

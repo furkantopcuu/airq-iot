@@ -149,3 +149,19 @@ def test_the_live_demo_and_the_smoke_test_stop_early_with_a_clear_message(tmp_pa
     with pytest.raises(SystemExit) as exc:
         demo.run_demo(cfg, Args())
     assert "fetch_release --only demo" in str(exc.value)  # and it points at the offline alternative
+
+
+def test_demo_speed_override_and_realistic_preset(capsys):
+    from scripts.demo import REALISTIC_SPEEDUP, demo_speedup
+
+    cfg = {"demo": {"speedup": 3600, "warmup_speedup": 20000}}
+    assert demo_speedup(cfg, None, False) is cfg  # fast default untouched
+    slow = demo_speedup(cfg, None, True)
+    assert slow["demo"]["speedup"] == REALISTIC_SPEEDUP and cfg["demo"]["speedup"] == 3600
+    assert demo_speedup(cfg, 120, False)["demo"]["speedup"] == 120.0
+    for bad in (0, -5, 20000):  # the warm-up must stay faster than the demo
+        with pytest.raises(SystemExit):
+            demo_speedup(cfg, bad, False)
+    with pytest.raises(SystemExit):
+        demo_speedup(cfg, 120, True)
+    assert "sn" in capsys.readouterr().out
