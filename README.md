@@ -208,6 +208,8 @@ plays one simulated hour per second inside a real haze episode and opens the das
 `python -m scripts.demo --offline` opens the dashboard on it without a broker (controls are
 disabled). `python -m scripts.demo --smoke` is a 10-second end-to-end self test.
 
+Backups if the live demo fails: `python -m scripts.demo --offline`, the tour above (`docs/assets/demo_dashboard.gif`), six screenshots of the dashboard (`slides/demo_screens/`) and a 24-second silent video (`slides/demo_backup.mp4`, rebuilt by `python -m scripts.make_demo_video`).
+
 ## Reproduce the results
 
 ```powershell
@@ -282,6 +284,7 @@ quality job green. Tests marked `slow` run locally only.
 tables, metrics, figures, scenario runs - `paper/tables/` generated LaTeX / Markdown tables -
 `docs/` decision log and per-component rationale - `tests/`. How the parts fit together:
 [ARCHITECTURE.md](ARCHITECTURE.md); what the experiments found: [FINDINGS.md](FINDINGS.md).
+`slides/` holds the presentation material (Turkish): the slide outline with a why-box per technical slide, speaker notes and likely jury questions with short answers. They are generated from `slides/src/` (`python -m scripts.make_slides`), so every number on a slide is the number in the paper.
 
 ## License
 

@@ -4,6 +4,18 @@ All notable changes to this project. Format follows [Keep a Changelog](https://k
 versions follow [Semantic Versioning](https://semver.org/). Every finding behind a change, including
 negative results, is logged in [docs/KARARLAR.md](docs/KARARLAR.md) (Turkish).
 
+## [Unreleased]
+
+### Added
+- **Paper** (`paper/`): IEEEtran draft, Turkish text with an English abstract, 8 pages, compiled on Overleaf. Every number in the text is a macro generated from `reports/` (`paper/NUMBERS.md` maps each to its source), checked by `scripts/check_paper.py` and by tests that re-derive the numbers independently.
+- `ARCHITECTURE.md`, `FINDINGS.md`, `scripts/quickstart.sh` (Linux, macOS, WSL, Git Bash).
+- **Presentation material** (`slides/`): outline, speaker notes, likely jury questions (generated from `slides/src/` with the paper's numbers), dashboard screenshots and a silent backup video.
+- `reports/tables/rq1_tuning_convergence.csv`: evidence for the 20-trial Optuna budget.
+
+### Fixed
+- `demo` and `demo --smoke` now say which input (raw data, trained models) is missing and which command provides it, instead of failing with "stations never appeared".
+- The RQ3a table caption no longer calls the full grid a "reduced plan".
+
 ## [0.3.0] - 2026-11-20
 
 ### Added

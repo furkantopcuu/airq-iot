@@ -100,7 +100,7 @@ def agg(
     if sub.empty:
         raise ValueError(f"{name}: {file} {flt} matched no rows")
     fns = {"mean": lambda: sub[col].mean(), "sum": lambda: sub[col].sum(), "count": lambda: float(len(sub)),
-           "std": lambda: sub[col].std(ddof=0)}  # fmt: skip
+           "max": lambda: sub[col].max(), "std": lambda: sub[col].std(ddof=0)}  # fmt: skip
     v = fns[fn]() * scale
     put(
         name,
@@ -178,6 +178,7 @@ def rq1() -> None:
     for model, short in MODELS.items():
         for h in (1, 6, 24):
             cell(macro_name("rmse", short, H_NAME[h]), "rq1_main", "rmse", ".2f", model=model, h=h)
+            cell(macro_name("rTwo", short, H_NAME[h]), "rq1_main", "r2", ".2f", model=model, h=h)
             cell(
                 macro_name("impr", short, H_NAME[h]),
                 "rq1_main",
@@ -354,6 +355,7 @@ def rq3a() -> None:
             loss=loss,
         )
     agg("nRunsTotal", "rq3a_bench", "reps", "sum", ".0f")
+    agg("nDupRateMax", "rq3a_bench", "duplicate_rate_mean", "max", ".3f")
     cell("nLatDbMedian", "rq3a_bench", "lat_db_p50_ms_mean", ".0f", **{**base, "loss": 0.0})
     cell(
         "nLatDbMedianDelay",

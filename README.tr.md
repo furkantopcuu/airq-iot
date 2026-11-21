@@ -207,6 +207,8 @@ bir haze epizodu ve q10-q90 bandı) indirir, `python -m scripts.demo --offline` 
 bunun üzerinde açar (kontroller kapalı). `python -m scripts.demo --smoke` 10 saniyelik uçtan uca
 kendi kendine testtir.
 
+Canlı demo çökerse yedekler: `python -m scripts.demo --offline`, yukarıdaki tur (`docs/assets/demo_dashboard.gif`), panonun altı ekran görüntüsü (`slides/demo_screens/`) ve 24 saniyelik sessiz bir video (`slides/demo_backup.mp4`, `python -m scripts.make_demo_video` ile yeniden üretilir).
+
 ## Sonuçları yeniden üretme
 
 ```powershell
@@ -280,6 +282,7 @@ senaryolar - `notebooks/` ince notebook'lar (`scripts/build_notebooks.py` üreti
 `reports/` sonuç tabloları, metrikler, şekiller, senaryo koşuları - `paper/tables/` üretilmiş LaTeX /
 Markdown tablolar - `docs/` karar günlüğü ve bileşen gerekçeleri - `tests/`. Parçaların birleşimi:
 [ARCHITECTURE.md](ARCHITECTURE.md); deney bulguları: [FINDINGS.md](FINDINGS.md).
+`slides/` sunum malzemesini içerir: her teknik slayta bir "neden?" kutusu koyan slayt iskeleti, konuşmacı notları ve olası jüri soruları ile kısa cevaplar. `slides/src/`'den üretilir (`python -m scripts.make_slides`); slayttaki her sayı makaledeki sayıdır.
 
 ## Lisans
 
