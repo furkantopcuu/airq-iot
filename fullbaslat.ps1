@@ -10,6 +10,8 @@
     4. starts the whole demo from scratch and opens the dashboard in the browser.
   Ctrl+C in this window closes everything.
 
+  Right-click the file > "Run with PowerShell" (or double-click fullbaslat.cmd): nothing else to do.
+
 .EXAMPLE
   .\fullbaslat.cmd               # normal start (fast pace; switch to realistic in the dashboard)
   .\fullbaslat.cmd -Realistic    # start at the realistic pace (60x)
@@ -27,8 +29,25 @@ $root = $PSScriptRoot
 Set-Location $root
 $py = Join-Path $root ".venv\Scripts\python.exe"
 
+try { $Host.UI.RawUI.WindowTitle = "airq-iot demo (kapatmak icin Ctrl+C)" } catch { }
+
+# Started with "Run with PowerShell" the window closes when the script ends: keep it open so a
+# message can be read. Not when the input is redirected (another program runs the script).
+function Wait-Key {
+    if ($Host.Name -eq "ConsoleHost" -and -not [Console]::IsInputRedirected) {
+        Write-Host ""
+        Read-Host "Kapatmak icin Enter'a bas" | Out-Null
+    }
+}
+trap {
+    Write-Host ""
+    Write-Host "HATA: $_" -ForegroundColor Red
+    Wait-Key
+    exit 1
+}
+
 function Step($text) { Write-Host ""; Write-Host "== $text" -ForegroundColor Cyan }
-function Fail($text) { Write-Host "HATA: $text" -ForegroundColor Red; exit 1 }
+function Fail($text) { Write-Host "HATA: $text" -ForegroundColor Red; Wait-Key; exit 1 }
 
 # ---------------------------------------------------------------- 1. environment
 Step "1/4 Ortam kontrolu"
@@ -122,4 +141,7 @@ try {
     # whatever is left of this run (a killed window leaves children behind)
     foreach ($p in (Get-DemoProcesses)) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue }
 }
+Write-Host ""
+Write-Host "Demo kapandi."
+Wait-Key
 exit $LASTEXITCODE
