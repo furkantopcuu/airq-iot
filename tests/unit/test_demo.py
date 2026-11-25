@@ -193,4 +193,12 @@ def test_the_demo_replays_to_the_end_of_the_data_and_loops_instead_of_going_offl
     out = subprocess.run(
         [sys.executable, "-m", "scripts.demo", "--help"], capture_output=True, text=True, cwd=REPO
     ).stdout
-    assert "--loop" in out
+    assert "--no-loop" in out
+    # the replay loops by default; --no-loop turns it off (--loop is still accepted)
+    for argv, expected in (([], True), (["--no-loop"], False), (["--loop"], True)):
+        code = (
+            f"import sys; sys.argv = ['demo'] + {argv!r}; import scripts.demo as d; "
+            "d.run_loop = lambda cfg, a, **k: print('LOOP', a.loop) or 0; d.main()"
+        )
+        res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=REPO)
+        assert f"LOOP {expected}" in res.stdout, (argv, res.stdout, res.stderr[-200:])

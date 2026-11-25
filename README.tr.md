@@ -211,6 +211,8 @@ Windows'ta en kolay başlatma `.\fullbaslat.cmd`: ortamı kurar, açık demoyu k
 
 Windows'ta `.\demo.ps1` aynısını projenin kendi sanal ortamıyla yapar (etkinleştirmek gerekmez; `-Realistic`, `-Offline`, `-StopOld`). Panoda Senaryo Kontrol > Filo, demo açıkken hızlı (3600×) ve gerçekçi (60×) hız arasında geçiş yapar.
 
+Oynatma verinin sonuna kadar sürer (hızlı modda yaklaşık 27 dakika) ve bitince kendiliğinden baştan başlar, Ctrl+C'ye kadar; `--no-loop` sonda durdurur.
+
 Hız: varsayılan akış saniyede bir simüle saat oynatır (3600x, değerler hızlı değişir). `python -m scripts.demo --realistic` her istasyonda dakikada bir yeni ölçüme yavaşlatır (60x), `--speedup N` istediğin hızı verir, panoda Filo > Hız ile canlı değiştirilir.
 
 Canlı demo çökerse yedekler: `python -m scripts.demo --offline`, yukarıdaki tur (`docs/assets/demo_dashboard.gif`), panonun altı ekran görüntüsü (`slides/demo_screens/`) ve 24 saniyelik sessiz bir video (`slides/demo_backup.mp4`, `python -m scripts.make_demo_video` ile yeniden üretilir).

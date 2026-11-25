@@ -3,7 +3,7 @@
 --offline   open the dashboard on a recorded SQLite file (no broker, no devices)
 --smoke     start the stack on a private broker, send one command through the API, stop
 --speedup N play the replay N times faster than real time (default 3600 = 1 s per simulated hour)
---loop      start again from the beginning when the replay ends (runs until Ctrl+C)
+--no-loop   stop when the replay ends (default: start again from the beginning, until Ctrl+C)
 --realistic slow, realistic pace: 60x = one new reading per station per minute (a free-test mode)
 """
 
@@ -59,10 +59,13 @@ def main() -> int:
         help=f"slow pace: {REALISTIC_SPEEDUP:g}x (1 reading/min)",
     )
     ap.add_argument(
-        "--loop",
-        action="store_true",
-        help="when the replay ends, start the demo again from the beginning (until Ctrl+C)",
+        "--no-loop",
+        dest="loop",
+        action="store_false",
+        help="stop when the replay ends (default: start again from the beginning, until Ctrl+C)",
     )
+    ap.add_argument("--loop", dest="loop", action="store_true", help=argparse.SUPPRESS)  # old flag
+    ap.set_defaults(loop=True)
     args = ap.parse_args()
     sys.stdout.reconfigure(errors="replace")  # a console without Turkish letters must not crash
     cfg = load_config()

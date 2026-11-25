@@ -15,6 +15,7 @@ negative results, is logged in [docs/KARARLAR.md](docs/KARARLAR.md) (Turkish).
 - `scripts.demo --realistic` (60x, one reading per station per minute) and `--speedup N`: a slow, realistic pace next to the fast default.
 - `demo.ps1`: one PowerShell command starts the demo with the project's virtual environment; the dashboard's Filo panel has "Hızlı (3600×)" and "Gerçekçi (60×)" buttons.
 - `fullbaslat.cmd` / `fullbaslat.ps1`: one command that sets up the environment, closes an open demo (and its broker), downloads missing data and models, and starts the demo from scratch.
+- The demo now replays to the end of the data and starts over by itself (`--no-loop` stops at the end), so it no longer goes offline after a few minutes.
 
 ### Fixed
 - `demo` and `demo --smoke` now say which input (raw data, trained models) is missing and which command provides it, instead of failing with "stations never appeared".
