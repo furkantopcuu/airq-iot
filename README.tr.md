@@ -207,7 +207,7 @@ bir haze epizodu ve q10-q90 bandı) indirir, `python -m scripts.demo --offline` 
 bunun üzerinde açar (kontroller kapalı). `python -m scripts.demo --smoke` 10 saniyelik uçtan uca
 kendi kendine testtir.
 
-Windows'ta en kolay başlatma `.ullbaslat.cmd`: ortamı kurar, açık demoyu kapatır, eksik veri ve modelleri indirir ve demoyu baştan açar (`-Realistic`, `-NoBrowser`).
+Windows'ta en kolay başlatma `.\fullbaslat.cmd`: ortamı kurar, açık demoyu kapatır, eksik veri ve modelleri indirir ve demoyu baştan açar (`-Realistic`, `-NoBrowser`).
 
 Windows'ta `.\demo.ps1` aynısını projenin kendi sanal ortamıyla yapar (etkinleştirmek gerekmez; `-Realistic`, `-Offline`, `-StopOld`). Panoda Senaryo Kontrol > Filo, demo açıkken hızlı (3600×) ve gerçekçi (60×) hız arasında geçiş yapar.
 

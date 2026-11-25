@@ -208,7 +208,7 @@ plays one simulated hour per second inside a real haze episode and opens the das
 `python -m scripts.demo --offline` opens the dashboard on it without a broker (controls are
 disabled). `python -m scripts.demo --smoke` is a 10-second end-to-end self test.
 
-On Windows the easiest start is `.ullbaslat.cmd`: it sets up the environment, closes a demo that is still running, downloads missing data and models, and opens the demo from scratch (`-Realistic`, `-NoBrowser`).
+On Windows the easiest start is `.\fullbaslat.cmd`: it sets up the environment, closes a demo that is still running, downloads missing data and models, and opens the demo from scratch (`-Realistic`, `-NoBrowser`).
 
 On Windows, `.\demo.ps1` does the same with the project's own virtual environment (nothing to activate; `-Realistic`, `-Offline`, `-StopOld`). In the dashboard, Senaryo Kontrol > Filo switches between the fast (3600x) and the realistic (60x) pace while the demo runs.
 
