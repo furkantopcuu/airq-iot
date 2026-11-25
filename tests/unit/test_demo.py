@@ -165,3 +165,32 @@ def test_demo_speed_override_and_realistic_preset(capsys):
     with pytest.raises(SystemExit):
         demo_speedup(cfg, 120, True)
     assert "sn" in capsys.readouterr().out
+
+
+def test_loop_restarts_the_demo_only_when_the_replay_ended():
+    from types import SimpleNamespace
+
+    from scripts.demo import run_loop
+
+    codes = iter([demo.RESTART, demo.RESTART, 0])
+    seen = []
+
+    def fake_run(cfg, args):
+        seen.append(args.no_browser)
+        return next(codes)
+
+    args = SimpleNamespace(no_browser=False)
+    assert run_loop({}, args, run=fake_run) == 0
+    assert seen == [False, True, True]  # the browser opens once; later starts reuse the tab
+    # an error or a normal exit is passed through, never restarted
+    assert run_loop({}, SimpleNamespace(no_browser=False), run=lambda c, a: 1) == 1
+
+
+def test_the_demo_replays_to_the_end_of_the_data_and_loops_instead_of_going_offline():
+    cfg = load_config()["demo"]
+    assert pd.Timestamp(cfg["end"]) == pd.Timestamp("2017-02-28 23:00")  # last hour of the data
+    # the loop flag exists on the command line
+    out = subprocess.run(
+        [sys.executable, "-m", "scripts.demo", "--help"], capture_output=True, text=True, cwd=REPO
+    ).stdout
+    assert "--loop" in out

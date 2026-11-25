@@ -129,7 +129,7 @@ if (-not $needData -and -not $needModels) { Write-Host "Veri ve modeller hazir."
 
 # ---------------------------------------------------------------- 4. start
 Step "4/4 Demo basliyor"
-$demoArgs = @()
+$demoArgs = @("--loop")   # when the recorded data ends, start again from the beginning
 if ($Realistic) { $demoArgs += "--realistic" }
 if ($NoBrowser) { $demoArgs += "--no-browser" }
 Write-Host "Pano: http://127.0.0.1:8501" -ForegroundColor Green

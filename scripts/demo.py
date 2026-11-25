@@ -3,6 +3,7 @@
 --offline   open the dashboard on a recorded SQLite file (no broker, no devices)
 --smoke     start the stack on a private broker, send one command through the API, stop
 --speedup N play the replay N times faster than real time (default 3600 = 1 s per simulated hour)
+--loop      start again from the beginning when the replay ends (runs until Ctrl+C)
 --realistic slow, realistic pace: 60x = one new reading per station per minute (a free-test mode)
 """
 
@@ -13,7 +14,7 @@ import json
 import sys
 
 from airq.config import load_config
-from airq.pipelines.demo import run_demo, smoke
+from airq.pipelines.demo import RESTART, run_demo, smoke
 
 REALISTIC_SPEEDUP = 60.0  # one simulated hour per minute: values change slowly, like a real station
 
@@ -57,6 +58,11 @@ def main() -> int:
         action="store_true",
         help=f"slow pace: {REALISTIC_SPEEDUP:g}x (1 reading/min)",
     )
+    ap.add_argument(
+        "--loop",
+        action="store_true",
+        help="when the replay ends, start the demo again from the beginning (until Ctrl+C)",
+    )
     args = ap.parse_args()
     sys.stdout.reconfigure(errors="replace")  # a console without Turkish letters must not crash
     cfg = load_config()
@@ -65,7 +71,16 @@ def main() -> int:
         print(json.dumps(result))
         print("SMOKE OK" if result["ok"] else "SMOKE FAILED")
         return 0 if result["ok"] else 1
-    return run_demo(demo_speedup(cfg, args.speedup, args.realistic), args)
+    return run_loop(demo_speedup(cfg, args.speedup, args.realistic), args)
+
+
+def run_loop(cfg: dict, args, run=run_demo) -> int:
+    """Run the demo; with --loop start it again whenever the replay has ended."""
+    while True:
+        code = run(cfg, args)
+        if code != RESTART:
+            return code
+        args.no_browser = True  # the open browser tab reconnects to the restarted dashboard
 
 
 if __name__ == "__main__":

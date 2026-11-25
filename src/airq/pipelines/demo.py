@@ -31,6 +31,8 @@ from airq.iot.schemas import FleetControl
 from airq.pipelines.scenarios import sim_clock
 from airq.server.control import Controller
 
+RESTART = 75  # run_demo returns this when the replay ended and --loop asks for a fresh start
+
 GUIDE = """
 Demo hazır. Tarayıcıda Senaryo Kontrol + Canlı izleme sayfasını aç: {dash}
  A) Planlı akış (~3 dk): sol panelde "Hazır senaryolar" -> sırayla
@@ -261,6 +263,9 @@ def run_demo(cfg: dict, args) -> int:
                 print(f"{dead} beklenmedik şekilde durdu; loglar: {logs}")
                 return 1
             if not args.offline and not stack.alive("fleet"):
+                if getattr(args, "loop", False):
+                    print("Veri tekrarı bitti; demo baştan başlıyor (--loop) ...")
+                    return RESTART
                 print("Filo (veri tekrarı) bitti; arayüz açık kalıyor, Ctrl+C ile çık.")
                 while deadline is None or time.monotonic() < deadline:
                     time.sleep(1.0)
